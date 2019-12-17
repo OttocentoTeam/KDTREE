@@ -16,6 +16,7 @@ typedef struct {
     int k; //numero di dimensioni del data/query set
     int kdtree_enabled; //1 per abilitare la costruzione del K-d-Tree, 0 altrimenti
     KDTREE kdtree; //riferimento al K-d-Tree, NULL se costruzione non richiesta
+    // VAFFANCULO ANGIULLI
 } params;
 
 void* get_block(int size, int elements) { 
