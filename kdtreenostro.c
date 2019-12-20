@@ -1,10 +1,51 @@
+/**************************************************************************************
+* 
+* CdL Magistrale in Ingegneria Informatica
+* Corso di Architetture e Programmazione dei Sistemi di Elaborazione - a.a. 2018/19
+* 
+* Progetto dell'algoritmo di Product Quantization for Nearest Neighbor Search
+* in linguaggio assembly x86-32 + SSE
+* 
+* Fabrizio Angiulli, aprile 2019
+* 
+**************************************************************************************/
+
+/*
+* 
+* Software necessario per l'esecuzione:
+* 
+*    NASM (www.nasm.us)
+*    GCC (gcc.gnu.org)
+* 
+* entrambi sono disponibili come pacchetti software 
+* installabili mediante il packaging tool del sistema 
+* operativo; per esempio, su Ubuntu, mediante i comandi:
+* 
+*    sudo apt-get install nasm
+*    sudo apt-get install gcc
+* 
+* potrebbe essere necessario installare le seguenti librerie:
+* 
+*    sudo apt-get install lib32gcc-4.8-dev (o altra versione)
+*    sudo apt-get install libc6-dev-i386
+* 
+* Per generare il file eseguibile:
+* 
+* nasm -f elf32 kdtreepca32.nasm && gcc -O0 -m32 -msse kdtreepca32.o kdtreepca32c.c -o kdtreepca32c && ./kdtreepca32c
+* 
+* oppure
+* 
+* ./runkdtreepca32
+* 
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
 #include <xmmintrin.h>
-#include <malloc.h>
+#include <malloc.h> //usato per creare punto radice del kdtree
 
 #define	MATRIX		float*
 #define	KDTREE		float* // modificare con il tipo di dato utilizzato
@@ -12,12 +53,38 @@
 typedef struct {
     char* filename; //nome del file, estensione .ds per il data set, estensione .qs per l'eventuale query set
     MATRIX ds; //data set 
+    MATRIX qs; //query set
     int n; //numero di punti del data set
     int k; //numero di dimensioni del data/query set
+    int nq; //numero di punti del query set
+    int h; //numero di componenti principali da calcolare 0 se PCA non richiesta
     int kdtree_enabled; //1 per abilitare la costruzione del K-d-Tree, 0 altrimenti
     KDTREE kdtree; //riferimento al K-d-Tree, NULL se costruzione non richiesta
+    float r; //raggio di query, -1 se range query non richieste
+    int silent; //1 per disabilitare le stampe, 0 altrimenti
+    int display; //1 per stampare i risultati, 0 altrimenti
+    MATRIX U; //matrice U restituita dall'algoritmo PCA
+    MATRIX V; //matrice V restituita dall'algoritmo PCA
     
+    //STRUTTURE OUTPUT MODIFICABILI
+    int* QA; //risposte alle query in forma di coppie di interi (id_query, id_vicino)
+    int nQA; //numero di risposte alle query
 } params;
+
+/*
+* 
+*	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
+* 	mediante un array (float*), in modo da occupare un unico blocco
+* 	di memoria, ma a scelta del candidato possono essere 
+* 	memorizzate mediante array di array (float**).
+* 
+* 	In entrambi i casi il candidato dovrà inoltre scegliere se memorizzare le
+* 	matrici per righe (row-major order) o per colonne (column major-order).
+*
+* 	L'assunzione corrente è che le matrici siano in row-major order.
+* 
+*/
+
 
 void* get_block(int size, int elements) { 
     return _mm_malloc(elements*size,16); 
@@ -38,6 +105,26 @@ void dealloc_matrix(MATRIX mat) {
     free_block(mat);
 }
 
+
+/*
+* 
+* 	load_data
+* 	=========
+* 
+*	Legge da file una matrice di N righe
+* 	e M colonne e la memorizza in un array lineare in row-major order
+* 
+* 	Codifica del file:
+* 	primi 4 byte: numero di righe (N) --> numero intero a 32 bit
+* 	successivi 4 byte: numero di colonne (M) --> numero intero a 32 bit
+* 	successivi N*M*4 byte: matrix data in row-major order --> numeri floating-point a precisione singola
+* 
+*****************************************************************************
+*	Se lo si ritiene opportuno, è possibile cambiare la codifica in memoria
+* 	della matrice. 
+*****************************************************************************
+* 
+*/
 MATRIX load_data(char* filename, int *n, int *k) {
     FILE* fp;
     int rows, cols, status, i;
@@ -62,6 +149,20 @@ MATRIX load_data(char* filename, int *n, int *k) {
     return data;
 }
 
+/*
+* 
+* 	save_data
+* 	=========
+* 
+*	Salva su file un array lineare in row-major order
+*	come matrice di N righe e M colonne
+* 
+* 	Codifica del file:
+* 	primi 4 byte: numero di righe (N) --> numero intero a 32 bit
+* 	successivi 4 byte: numero di colonne (M) --> numero intero a 32 bit
+* 	successivi N*M*4 byte: matrix data in row-major order --> numeri interi o floating-point a precisione singola
+* 
+*/
 void save_data(char* filename, void* X, int n, int k) {
     FILE* fp;
     int i;
@@ -78,10 +179,35 @@ void save_data(char* filename, void* X, int n, int k) {
     fclose(fp);
 }
 
-float* kdtree(params *input, int l){
-	if((*input).ds==NULL)
+
+
+// PROCEDURE ASSEMBLY
+extern void prova(params* input);
+
+
+/*
+*	PCA
+* 	=====================
+*/
+void pca(params* input) {
+    
+    // -------------------------------------------------
+    // Codificare qui l'algoritmo PCA
+    // -------------------------------------------------
+    prova(input);
+    // Calcola le matrici U e V
+    // -------------------------------------------------
+    
+}
+
+/*
+*	K-d-Tree
+* 	======================
+*/
+void kdtree(params* input) {
+    if((*input).ds==NULL)
 		return 0;
-	int c = l%input->k; //calcolo il taglio
+	int c = l%input->k;
 	float somma;
 	float media;
 	int i;
@@ -122,6 +248,21 @@ float* kdtree(params *input, int l){
 	return P;
 }
 
+/*
+*	Range Query Search
+* 	======================
+*/
+void range_query(params* input) {
+    
+    // -------------------------------------------------
+    // Codificare qui l'algoritmo di ricerca
+    // -------------------------------------------------
+
+    // Calcola il risultato come una matrice di nQA coppie di interi
+    // (id_query, id_vicino)
+    // o in altro formato
+    // -------------------------------------------------
+}
 
 int main(int argc, char** argv) {
     
@@ -267,7 +408,7 @@ int main(int argc, char** argv) {
     // Calcolo PCA
     //
     
-    /*if(input->h > 0){
+    if(input->h > 0){
         t = clock();
         pca(input);
         t = clock() - t;
@@ -283,7 +424,7 @@ int main(int argc, char** argv) {
         printf("\nPCA time = %.3f secs\n", time);
     else
         printf("%.3f\n", time);
-    */
+    
     //
     // Costruzione K-d-Tree
     //
@@ -303,7 +444,7 @@ int main(int argc, char** argv) {
     //
     // Range query search
     //
-   /* 
+    
     if(input->r >= 0){
         t = clock();
         range_query(input);
@@ -315,13 +456,12 @@ int main(int argc, char** argv) {
         printf("\nQuerying time = %.3f secs\n", time);
     else
         printf("%.3f\n", time);
-*/
     
     //
     // Salva il risultato delle query
     // da modificare se si modifica il formato delle matrici di output
     //
-    /*
+    
     if(input->r >= 0){
         if(!input->silent && input->display) {
             //NB: il codice non assume che QA sia ordinata per query, in caso lo sia ottimizzare il codice
@@ -341,8 +481,7 @@ int main(int argc, char** argv) {
     
     if (!input->silent)
         printf("\nDone.\n");
-*/
+
     return 0;
 }
-
 
