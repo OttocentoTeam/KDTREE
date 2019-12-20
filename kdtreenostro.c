@@ -81,7 +81,7 @@ void save_data(char* filename, void* X, int n, int k) {
 float* kdtree(params *input, int l){
 	if((*input).ds==NULL)
 		return 0;
-	int c = l%input->k;
+	int c = l%input->k; //calcolo il taglio
 	float somma;
 	float media;
 	int i;
