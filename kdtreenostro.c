@@ -207,13 +207,13 @@ void pca(params* input) {
 void kdtree(params* input) {
     if((*input).ds==NULL)
 		return 0;
-	int c = l%input->k;
+	int c = l%input->k; //taglio per la dimensione
 	float somma;
 	float media;
 	int i;
-	int j;
+	int j; 
 	for(i=0; i<input->n; i++){
-		somma+=(*input).&ds[i][c];//vogliamo aggiungere a somma il valore presente in posizione (i,c) del dataset	
+		somma+=(*input).&ds[i*c];//vogliamo aggiungere a somma il valore presente in posizione (i,c) del dataset	
 	}
 	media=somma/input->n;
 	float tmp = media;
