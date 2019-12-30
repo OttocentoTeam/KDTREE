@@ -205,7 +205,12 @@ void pca(params* input) {
     float *pu; //puntatore a u
 
     u=calloc(n,sizeof(float)); //alloco ad u n locazioni di memoria per contenere gli elementi di una colonna
-    
+    pu=u;
+    for(int i=0; i<n*k; i+=n){
+        pd=dataset+i;
+        *pu=*pd;
+        pu++;
+    }//inserisce in pu gli elementi della prima colonna del dataset
     
 
     prova(input);
