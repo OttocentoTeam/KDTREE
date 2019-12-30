@@ -25,8 +25,8 @@ void stampadst();
 MATRIX prodottoDtu();
 
 int main(int argc, char const *argv[]){
-    n=50;
-    k=16;
+    n=5;
+    k=6;
 
      data=generads(n,k); //EASTER EGG 50x16=800
      stampads();
@@ -69,7 +69,8 @@ void stampads(){
     printf("STAMPA DATASET...\n");
     printf("\n");
    
-    for(int j=0;j<n*k;){
+    int j=0;
+    while(j<n*k){
       for(int z=0;z<k;z++){
         pd=data+j; //pd punta alla j-esima locazione del dataset
         printf("%6.1f ",*pd); //stampa il contenuto della locazione puntata da pd
@@ -126,7 +127,7 @@ MATRIX dsTrasposto(){
   dataT=calloc(n*k,sizeof(float));
   pdt=dataT;
   pd=data;
-  for(int i=0; i<n; i++){
+  for(int i=0; i<k; i++){
     for(int j=i; j<n*k; j+=k){
       pd=data+j;
       *pdt=*pd;
@@ -140,22 +141,48 @@ void stampadst(){
    printf("STAMPA DATASET TRASPOSTO...\n");
     printf("\n");
    
-    for(int j=0;j<n*k;){
+   int j=0;
+    while(j<n*k){
       for(int z=0;z<n;z++){
-        pdt=dataT+j; //pdt punta alla j-esima locazione del dataset
+        pdt=dataT+j; //pd punta alla j-esima locazione del dataset
         printf("%6.1f ",*pdt); //stampa il contenuto della locazione puntata da pd
         if(z%(n-1)==0 && z!=0){
           printf("\n");
-          
         }
         j++;
       }
     }
+    
+    printf("\n");
+    
 }//stampads
 
 MATRIX prodottoDtu(){
-  MATRIX dtu;
-  return dtu;
+  //NOTA BENE: la dimensione del dataset trasposto è k*n!
+  MATRIX prod;
+  prod=calloc(k,sizeof(float));
+  float *pp; //puntatore al prodotto
+  pp=prod;
+
+  float f1;
+  float f2;
+
+  float tmp;
+
+  for(int i=0; i<n*k;i+=n){
+    pdt=dataT+i;
+    pp++;
+    for(int j=0; j<n; j++){
+        pu=u+j;
+        f1=*pdt;
+        f2=*pu;
+        tmp=f1*f2;
+        pdt++;
+        *pp+=tmp;
+    }
+  }
+
+  return prod;
 }
 
 
