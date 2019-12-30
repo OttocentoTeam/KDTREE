@@ -44,8 +44,8 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <libgen.h>
 #include <xmmintrin.h>
-#include <malloc.h> //usato per creare punto radice del kdtree
 
 #define	MATRIX		float*
 #define	KDTREE		float* // modificare con il tipo di dato utilizzato
@@ -87,7 +87,7 @@ typedef struct {
 
 
 void* get_block(int size, int elements) { 
-    return _mm_malloc(elements*size,16); 
+    return _mm_malloc(elements*size,32); 
 }
 
 
@@ -135,7 +135,8 @@ MATRIX load_data(char* filename, int *n, int *k) {
         printf("'%s': bad data file name!\n", filename);
         exit(0);
     }
-    
+
+    //Perchè prende prima le colonne e poi le righe? @RP
     status = fread(&cols, sizeof(int), 1, fp);
     status = fread(&rows, sizeof(int), 1, fp);
     
@@ -168,8 +169,8 @@ void save_data(char* filename, void* X, int n, int k) {
     int i;
     fp = fopen(filename, "wb");
     if(X != NULL){
-        fwrite(&n, 4, 1, fp);
         fwrite(&k, 4, 1, fp);
+        fwrite(&n, 4, 1, fp);
         for (i = 0; i < n; i++) {
             fwrite(X, 4, k, fp);
             //printf("%i %i\n", ((int*)X)[0], ((int*)X)[1]);
@@ -190,10 +191,27 @@ extern void prova(params* input);
 * 	=====================
 */
 void pca(params* input) {
+    float teta=0.00000001; //imposta la soglia a 1e-8
     
-    // -------------------------------------------------
-    // Codificare qui l'algoritmo PCA
-    // -------------------------------------------------
+    MATRIX dataset=input->ds;//dataset
+    int n=input->n; //righe del dataset
+    int k=input->k; //colonne del dataset
+
+    float *pd=dataset; //puntatore al dataset
+    pd=dataset+(int)((n/2)*k);  //centra D sulla media, non so se serve il cast in caso di n dispari
+
+    float* u;   //generica colonna del dataset
+    float *pu; //puntatore a u
+
+    u=calloc(n,sizeof(float)); //alloco ad u n locazioni di memoria per contenere gli elementi di una colonna
+    pu=u;
+    for(int i=0; i<n*k; i+=n){
+        pd=dataset+i;
+        *pu=*pd;
+        pu++;
+    }//inserisce in pu gli elementi della prima colonna del dataset
+    
+
     prova(input);
     // Calcola le matrici U e V
     // -------------------------------------------------
@@ -205,54 +223,17 @@ void pca(params* input) {
 * 	======================
 */
 void kdtree(params* input) {
-    if((*input).ds==NULL)
-		return 0;
-	int c = l%input->k; //taglio per la dimensione
-	float somma;
-	float media;
-	int i;
-	int j; 
-	for(i=0; i<input->n; i++){
-		somma+=(*input).&ds[i*c];//vogliamo aggiungere a somma il valore presente in posizione (i,c) del dataset	
-	}
-	media=somma/input->n;
-	float tmp = media;
-	int tmp1;
-	float *P = (float*) malloc(sizeof(float)*input->k);
-	for(i=0; i<input->n; i++){
-		if(abs(media-input->ds[i][c])<tmp){
-			tmp = input->ds[i][c];
-			for(j=0;j<input->k;j++){
-				P[j] = input->*(&ds[i][j]);
-				tmp1 = i;
-			}			
-		}
-	}
-	MATRIX ds1;
-	MATRIX ds2;
-	for(i=0;i<input->n;i++){
-		if(input->ds[i][c]<P[c]){
-			for(j=0;j<input->k;j++)
-				ds1[i][j]=P[j];
-		}
-		else if(input->ds[i][c]>=P[c]){
-			for(j=0;j<input->k;j++)
-				ds2[i][j]=P[j];
-		}
-		else if(tmp1 == i){
-			continue;
-		}
-	}
-	KDTREE sx = kdtree(ds1,l++);
-	KDTREE dx = kdtree(ds2,l++);
-	return P;
+    
+    // -------------------------------------------------
+    // Codificare qui l'algoritmo di costruzione
+    // -------------------------------------------------
 }
 
 /*
 *	Range Query Search
 * 	======================
 */
-void range_query(params* input) {
+void range_query(params* input) {   
     
     // -------------------------------------------------
     // Codificare qui l'algoritmo di ricerca
@@ -267,6 +248,7 @@ void range_query(params* input) {
 int main(int argc, char** argv) {
     
     char fname[256];
+    char* dsname;
     int i, j, k;
     clock_t t;
     float time;
@@ -357,6 +339,7 @@ int main(int argc, char** argv) {
     }
     
     sprintf(fname, "%s.ds", input->filename);
+    dsname = basename(strdup(input->filename));
     input->ds = load_data(fname, &input->n, &input->k);
 
     if(input->h < 0){
@@ -413,10 +396,8 @@ int main(int argc, char** argv) {
         pca(input);
         t = clock() - t;
         time = ((float)t)/CLOCKS_PER_SEC;
-        sprintf(fname, "%s.U", input->filename);
-        save_data(fname, input->U, input->n, input->h);
-        sprintf(fname, "%s.V", input->filename);
-        save_data(fname, input->V, input->k, input->h);
+        sprintf(fname, "%s.U", dsname);
+        sprintf(fname, "%s.V", dsname);
     }else
         time = -1;
        
@@ -475,7 +456,7 @@ int main(int argc, char** argv) {
             }
             printf("\n");
         }
-        sprintf(fname, "%s.qa", input->filename);
+        sprintf(fname, "%s.qa", dsname);
         save_data(fname, input->QA, input->nQA, 2);
     }
     
@@ -484,4 +465,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
