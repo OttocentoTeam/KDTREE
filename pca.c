@@ -25,8 +25,8 @@ void stampadst();
 MATRIX prodottoDtu();
 
 int main(int argc, char const *argv[]){
-    n=10;
-    k=5;
+    n=50;
+    k=16;
 
      data=generads(n,k); //EASTER EGG 50x16=800
      stampads();
