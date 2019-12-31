@@ -44,8 +44,8 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#include <libgen.h>
 #include <xmmintrin.h>
+#include <malloc.h> //usato per creare punto radice del kdtree
 
 #define	MATRIX		float*
 #define	KDTREE		float* // modificare con il tipo di dato utilizzato
@@ -87,7 +87,7 @@ typedef struct {
 
 
 void* get_block(int size, int elements) { 
-    return _mm_malloc(elements*size,32); 
+    return _mm_malloc(elements*size,16); 
 }
 
 
@@ -135,8 +135,7 @@ MATRIX load_data(char* filename, int *n, int *k) {
         printf("'%s': bad data file name!\n", filename);
         exit(0);
     }
-
-    //Perchè prende prima le colonne e poi le righe? @RP
+    
     status = fread(&cols, sizeof(int), 1, fp);
     status = fread(&rows, sizeof(int), 1, fp);
     
@@ -169,8 +168,8 @@ void save_data(char* filename, void* X, int n, int k) {
     int i;
     fp = fopen(filename, "wb");
     if(X != NULL){
-        fwrite(&k, 4, 1, fp);
         fwrite(&n, 4, 1, fp);
+        fwrite(&k, 4, 1, fp);
         for (i = 0; i < n; i++) {
             fwrite(X, 4, k, fp);
             //printf("%i %i\n", ((int*)X)[0], ((int*)X)[1]);
@@ -191,28 +190,10 @@ extern void prova(params* input);
 * 	=====================
 */
 void pca(params* input) {
-    //asdasfasd
-    float teta=0.00000001; //imposta la soglia a 1e-8
     
-    MATRIX dataset=input->ds;//dataset
-    int n=input->n; //righe del dataset
-    int k=input->k; //colonne del dataset
-
-    float *pd=dataset; //puntatore al dataset
-    pd=dataset+(int)((n/2)*k);  //centra D sulla media, non so se serve il cast in caso di n dispari
-
-    float* u;   //generica colonna del dataset
-    float *pu; //puntatore a u
-
-    u=calloc(n,sizeof(float)); //alloco ad u n locazioni di memoria per contenere gli elementi di una colonna
-    pu=u;
-    for(int i=0; i<n*k; i+=n){
-        pd=dataset+i;
-        *pu=*pd;
-        pu++;
-    }//inserisce in pu gli elementi della prima colonna del dataset
-    
-
+    // -------------------------------------------------
+    // Codificare qui l'algoritmo PCA
+    // -------------------------------------------------
     prova(input);
     // Calcola le matrici U e V
     // -------------------------------------------------
@@ -223,18 +204,73 @@ void pca(params* input) {
 *	K-d-Tree
 * 	======================
 */
-void kdtree(params* input) {
-    
-    // -------------------------------------------------
-    // Codificare qui l'algoritmo di costruzione
-    // -------------------------------------------------
+float* kdtree(params* input) {
+    if(input->ds==0)
+		return NULL;
+    int l;//livello corrente che ci aiuta a calcolare la dimensione su cui effettuare il taglio
+	int c = l%input->k; //c è la dimensione su cui effettuar il taglio
+    /*Andiamo ad individuare il punto mediano lungo la dimensione c. Procedo nel seguente modo:
+    mi calcolo la somma di tutti gli elementi presenti nella dimensione su cui sto tagliando e mi ricavo la media,
+    attraverso il risultato della media vado ad individuare l'elemento du cui devo tagliare, e in questo
+    modo mi in un vettore vuoto il punto associato all'elemento su cui si effettua il taglio e lo restituisco alla fine,
+    come scritto nello pseudo-codice del progetto*/
+	float somma;
+	float media;
+	int i;
+	int j;
+    int z;
+    int w;
+    int n;//mi serve per poter scalare sulla riga del mediano
+    /*con il for seguente parto da c e incremento ogni volta di k, in modo tale da andare a prendere
+    sempre gli elementi sulla dimensione su cui sto lavorando*/ 
+	for(i=c; i<(input->n)*(input->k); i+=input->k){
+		somma+=*(input->ds+i);//andiamo ad aggiungere ogni volta a somma il valore presente nella dimensione(o colonna se preferisci) c e riga i-esima
+	media=somma/input->n;
+    //trovato la media, vado a trovarmi esattamente il punto sulla dimensione c su cui lavorare
+	int pc;//"puntatore" che ci indica la posizione del punto mediano sulla dimensione c
+    float *P = (float*) malloc(sizeof(float)*input->k);
+	for(j=c; j<(input->n)*(input->k); j+=input->k){
+        if((media/(*(input->ds+j)))>=1.0 && (media/(*(input->ds+j)))<=1.25){
+            pc=j;
+            break;/*in questo modo, quando trovo quel valore che si avvicina a quello della media facendo il rapporto
+            , mi salvo la sua posizione e fermo il for*/
+        }
+    }
+    /*ora vado a riempire il vettore P che dovrò restituire alla fine.
+    In questo caso rappresenterà la radice dell'albero*/
+    for(z=c; z<(input->n)*(input->k); z+=input->k){
+        if(pc==z){
+            for(w=0; w<input->k; w++){
+                P[w]=*(input->ds+z+n);
+                n++;
+            }
+        }
+    }
+	MATRIX ds1;
+	MATRIX ds2;
+	for(i=0;i<input->n;i++){
+		if(input->ds[i][c]<P[c]){
+			for(j=0;j<input->k;j++)
+				ds1[i][j]=P[j];
+		}
+		else if(input->ds[i][c]>=P[c]){
+			for(j=0;j<input->k;j++)
+				ds2[i][j]=P[j];
+		}
+		else if(tmp1 == i){
+			continue;
+		}
+	}
+	KDTREE sx = kdtree(ds1,l++);
+	KDTREE dx = kdtree(ds2,l++);
+	return P;
 }
 
 /*
 *	Range Query Search
 * 	======================
 */
-void range_query(params* input) {   
+void range_query(params* input) {
     
     // -------------------------------------------------
     // Codificare qui l'algoritmo di ricerca
@@ -249,7 +285,6 @@ void range_query(params* input) {
 int main(int argc, char** argv) {
     
     char fname[256];
-    char* dsname;
     int i, j, k;
     clock_t t;
     float time;
@@ -340,7 +375,6 @@ int main(int argc, char** argv) {
     }
     
     sprintf(fname, "%s.ds", input->filename);
-    dsname = basename(strdup(input->filename));
     input->ds = load_data(fname, &input->n, &input->k);
 
     if(input->h < 0){
@@ -397,8 +431,10 @@ int main(int argc, char** argv) {
         pca(input);
         t = clock() - t;
         time = ((float)t)/CLOCKS_PER_SEC;
-        sprintf(fname, "%s.U", dsname);
-        sprintf(fname, "%s.V", dsname);
+        sprintf(fname, "%s.U", input->filename);
+        save_data(fname, input->U, input->n, input->h);
+        sprintf(fname, "%s.V", input->filename);
+        save_data(fname, input->V, input->k, input->h);
     }else
         time = -1;
        
@@ -457,7 +493,7 @@ int main(int argc, char** argv) {
             }
             printf("\n");
         }
-        sprintf(fname, "%s.qa", dsname);
+        sprintf(fname, "%s.qa", input->filename);
         save_data(fname, input->QA, input->nQA, 2);
     }
     
@@ -466,3 +502,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
