@@ -9,7 +9,7 @@ typedef struct point {
         int x,
             y;
 
-} Punto; //Da leggere con la voce di Nigro
+} Punto; 
 
 float EuclideanDistance(Punto *p, Punto *q) { //metodo per il calcolo della distanza tra due punti
 
