@@ -71,6 +71,8 @@ typedef struct {
     int nQA; //numero di risposte alle query
 } params;
 
+KDTREE buildTree(params* input, MATRIX DT, int liv, int dimensione);
+
 /*
 * 
 *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
@@ -224,13 +226,13 @@ float* kdtree(params* input) {
     /*con il for seguente parto da c e incremento ogni volta di k, in modo tale da andare a prendere
     sempre gli elementi sulla dimensione su cui sto lavorando*/ 
 	for(i=c; i<(input->n)*(input->k); i+=input->k){
-		somma+=*(input->ds+i);//andiamo ad aggiungere ogni volta a somma il valore presente nella dimensione(o colonna se preferisci) c e riga i-esima
+		somma+=*(input->ds)+i;//andiamo ad aggiungere ogni volta a somma il valore presente nella dimensione(o colonna se preferisci) c e riga i-esima
 	media=somma/input->n;
     //trovato la media, vado a trovarmi esattamente il punto sulla dimensione c su cui lavorare
 	int pc;//"puntatore" che ci indica la posizione del punto mediano sulla dimensione c
     float *P = (float*) malloc(sizeof(float)*input->k);
 	for(j=c; j<(input->n)*(input->k); j+=input->k){
-        if((media/(*(input->ds+j)))>=1.0 && (media/(*(input->ds+j)))<=1.25){
+        if((media/(*(input->ds)+j))>=1.0 && (media/(*(input->ds)+j))<=1.25){
             pc=j;
             break;/*in questo modo, quando trovo quel valore che si avvicina a quello della media facendo il rapporto
             , mi salvo la sua posizione e fermo il for*/
@@ -241,30 +243,86 @@ float* kdtree(params* input) {
     for(z=c; z<(input->n)*(input->k); z+=input->k){
         if(pc==z){
             for(w=0; w<input->k; w++){
-                P[w]=*(input->ds+z+n);
+                P[w]=*(input->ds)+z+n;
                 n++;
             }
         }
+        break; //Esco dal for poichè ho già trovato il nodo radice del 
+        //k-d-tree associato a D
     }
-	MATRIX ds1;
-	MATRIX ds2;
-	for(i=0;i<input->n;i++){
-		if(input->ds[i][c]<P[c]){
-			for(j=0;j<input->k;j++)
-				ds1[i][j]=P[j];
-		}
-		else if(input->ds[i][c]>=P[c]){
-			for(j=0;j<input->k;j++)
-				ds2[i][j]=P[j];
-		}
-		else if(tmp1 == i){
-			continue;
-		}
-	}
-	KDTREE sx = kdtree(ds1,l++);
-	KDTREE dx = kdtree(ds2,l++);
+	MATRIX DS1; int x = 0;
+    MATRIX DS2; int y = 0;
+    for(i=c; i<(input->n)*(input->k); i+=input->k){
+        if((*(input->ds)+i)<(*(input->ds)+pc)){
+            for(j=0; j<input->k; j++){
+                *(DS1)+j+x=*(input->ds)+i-(i%input->k)+j;
+            }
+            x+=input->k; //in questo modo evito di scrivere sulle celle già usate
+            //inoltre posso usarlo per vedere la dimensione effettiva del nuovo dataset
+            //visto come un array lungo
+        }
+         if((*(input->ds)+i)>=(*(input->ds)+pc)){
+            for(j=0; j<input->k; j++){
+                *(DS2)+j+y=*(input->ds)+i-(i%input->k)+j;
+            }
+            y+=input->k;
+        }
+        else if(pc==i){//pc è la "posizione" dove si trova il mediano
+            continue;
+        }
+    }
+    KDTREE sx = buildTree(input,DS1,l++,x);
+    KDTREE dx = buildTree(input,DS2,l++,y);
 	return P;
 }
+
+KDTREE buildTree(params* input, MATRIX DT, int liv, int dimensione){
+    int c = liv%input->k;
+    int puntCorr;
+    int i;
+    int j;
+    float somma;
+    float media;
+    int cont = 0;//mi conta quanti elementi sono presenti nel dataset attuale
+    // e mi servirà anche per calcolare la media
+    for(i=c; i<dimensione; i+=input->k){
+        somma+=*(DT)+i;
+        cont++;
+    }
+    media=somma/cont;
+    for(j=c; j<dimensione; j+=input->k){
+        if((media/(*(DT)+j))>=1.0 && (media/(*(DT)+j))<=1.25){
+            puntCorr=j;
+            break;
+        }
+    }
+    MATRIX ds1; int dimX=0;
+    MATRIX ds2; int dimY=0;
+    for(i=c; i<dimensione; i+=input->k){
+         if((*(DT)+i)<(*(DT)+puntCorr)){
+            for(j=0; j<input->k; j++){
+                *(ds1)+j+dimX==*(DT)+i-(i%input->k)+j;
+            }
+            dimX+=input->k;         
+        }
+         if((*(DT)+i)>=(*(DT)+puntCorr)){
+            for(j=0; j<input->k; j++){
+                *(ds2)+j+dimY==*(DT)+i-(i%input->k)+j;
+            }
+            dimY+=input->k;        
+        }
+        else if(puntCorr==i){
+            continue;
+        }
+    }
+    //NON SO COME RITORNARE DUE VALORI CONTEMPORANEAMENTE, RISOLVETE VOI SE NON VA BENE
+    if(ds1!=NULL){
+        return buildTree(input,ds1,liv++,dimX);
+    }
+    if(ds2!=NULL){
+        return buildTree(input,ds2,liv++,dimY);
+    }
+}//buildTree
 
 /*
 *	Range Query Search
