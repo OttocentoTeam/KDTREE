@@ -65,6 +65,8 @@ typedef struct {
     int display; //1 per stampare i risultati, 0 altrimenti
     MATRIX U; //matrice U restituita dall'algoritmo PCA
     MATRIX V; //matrice V restituita dall'algoritmo PCA
+    /*AGGIUNTE MIE*/
+    float* Radice;
     
     //STRUTTURE OUTPUT MODIFICABILI
     int* QA; //risposte alle query in forma di coppie di interi (id_query, id_vicino)
@@ -206,9 +208,9 @@ void pca(params* input) {
 *	K-d-Tree
 * 	======================
 */
-float* kdtree(params* input) {
-    if(input->ds==0)
-		return NULL;
+ void kdtree(params* input) {
+    //if(input->ds==0)
+		//return NULL;
     int l;//livello corrente che ci aiuta a calcolare la dimensione su cui effettuare il taglio
 	int c = l%input->k; //c è la dimensione su cui effettuar il taglio
     /*Andiamo ad individuare il punto mediano lungo la dimensione c. Procedo nel seguente modo:
@@ -273,7 +275,7 @@ float* kdtree(params* input) {
     }
     KDTREE sx = buildTree(input,DS1,l++,x);
     KDTREE dx = buildTree(input,DS2,l++,y);
-	return P;
+	input->Radice=P;
 }
 
 KDTREE buildTree(params* input, MATRIX DT, int liv, int dimensione){
