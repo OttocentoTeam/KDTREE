@@ -87,6 +87,16 @@ typedef struct {
 * 
 */
 
+struct tree{
+    float* point;
+    struct tree *left;
+    struct tree *right;
+};//tree
+
+struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,int col);
+void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c);
+void Scambia(float a,float b);
+
 
 void* get_block(int size, int elements) { 
     return _mm_malloc(elements*size,16); 
@@ -411,11 +421,61 @@ void pca(int n, int k, int h, MATRIX ds) {
 * 	======================
 */
 void kdtree(params* input) {
-    
-    // -------------------------------------------------
-    // Codificare qui l'algoritmo di costruzione
-    // -------------------------------------------------
-}
+    int inizio_matrice = 0;
+    int fine_matrice = input->n-1;
+    int col = input->k-1;
+    MATRIX d = input->ds;
+    struct tree *root;
+    printf("Creazione del kdtree iniziata\n");
+    int l = 0;
+    root = buildTree(d,l,inizio_matrice,fine_matrice,col);
+    printf("Creazione del kdtree terminata\n");
+    printf("Successo!\n");
+}//kdtree
+
+struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,int col){
+    if(d==0){
+        return NULL;
+    }
+    int c = livello%col;
+    ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
+    int index = ((fine_matrice-inizio_matrice)/2)+inizio_matrice;
+    int i;
+    struct tree* node = (struct tree*)malloc(sizeof(struct tree));
+    node->point = (float*)malloc(col*sizeof(float));
+    for(i = 0; i < col; i++){
+        node->point[i] = d[(index*col)+i];
+    }
+    if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
+        node->left = buildTree(d,livello++,inizio_matrice,index-1,col);
+        node->right = buildTree(d,livello++,index+1,fine_matrice,c);
+    }
+    else if((fine_matrice-inizio_matrice)==1){
+        node->right = buildTree(d,livello++,index+1,fine_matrice,col);
+    }
+    free(node);
+    return node;
+}//buildTree
+
+void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
+    int i, j, z;
+    for(i = inizio_matrice, i < fine_matrice, i+=col){
+        for(z = i+1; z < fine_matrice; z++){
+            if((d[i*col+c])>(d[z*col+c])){
+                for(j = 0; j < col; j++){
+                    Scambia(d[i*col+j],d[z*col+j]);
+                }
+            }
+        }
+    }
+}//ordinaDataset
+
+void Scambia(float a,float b){
+    float tmp;
+    tmp = a;
+    a = b;
+    b = tmp;
+}//Scambia
 
 /*
 *	Range Query Search
@@ -598,7 +658,7 @@ int main(int argc, char** argv) {
     // Costruzione K-d-Tree
     //
     
-    if(input->kdtree){
+    if(input->kdtree_enabled){
         t = clock();
         kdtree(input);
         t = clock() - t;
