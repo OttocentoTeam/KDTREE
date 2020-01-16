@@ -95,10 +95,11 @@ struct tree{
 
 struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,int col);
 void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c);
-void Scambia(float a,float b);
-float EuclideanDistance(float* p, float* q, int dim);
-float minCol (MATRIX D, int rig, int col);
-float maxCol (MATRIX D, int rig, int col);
+//void Scambia(float a,float b);
+//float EuclideanDistance(float* p, float* q, int dim);
+//float minCol (MATRIX D, int rig, int col);
+//float maxCol (MATRIX D, int rig, int col);
+float* build_Matrix(KDTREE albero, struct tree *nodo, int k, int n,int index_supporto);
 
 void* get_block(int size, int elements) { 
     return _mm_malloc(elements*size,16); 
@@ -494,12 +495,12 @@ void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
   	ordinaDataset(d, j+1, fine_matrice,col,c);
 }//ordinaDataset-QUICKSORT FUNZIONANTE
 
-void Scambia(float a,float b){
+/*void Scambia(float a,float b){
     float tmp;
     tmp = a;
     a = b;
     b = tmp;
-}//Scambia
+}
 
 float EuclideanDistance(float* p, float* q, int dim) { //metodo per il calcolo della distanza tra due punti
       float somma=0;
@@ -551,22 +552,38 @@ float Distance (float* H, float* Q){   //RIVEDERE
         }    
     return EuclideanDistance(P, Q, dim);
     }
-}    
+}  */ 
 
-float* build_Matrix(KDTREE albero, struct tree *nodo, int k, int n){
+float* build_Matrix(KDTREE albero, struct tree *nodo, int k, int n,int index_supporto){
+    // a index_supporto quando lo richiamiamo nel build_region lo facciamo partire da 0
+    // e poi ci penserà il build_Matrix a incrementarlo
     MATRIX supporto = alloc_matrix(n, k);
     if(nodo==NULL) return NULL;
     if(nodo->left==NULL && nodo->right==NULL){
         return NULL;
     }
-    if(albero->point == nodo->point){
-        
-        (albero->point) 
-        return build_Matrix(albero, )
+    int i;
+    int j;
+    for(i = 0; i < k; i++){
+        if(albero->point[i]==nodo->point[i]){
+            supporto[index_supporto] = nodo->point[i];
+            index_supporto++;
+        }
+        else{
+            int index_cancellazione = index_supporto;
+            for(j = 0; j < index_cancellazione; j++){
+                supporto[j] = 0;
+                index_supporto--;
+            }
+            break;
+        }
     }
-}
+    build_Matrix(albero,nodo->left,k,n,index_supporto);
+    build_Matrix(albero,nodo->right,k,n,index_supporto);
+    return supporto;
+}//build_Matrix
 
-float* build_region(MATRIX supporto, int k, int n){ //metodo per la costruzione della regione H a partire dal nodo n
+/*float* build_region(MATRIX supporto, int k, int n){ //metodo per la costruzione della regione H a partire dal nodo n
 
     float* supporto = alloc_matrix(n, k);
     if(nodo==NULL) return NULL;
@@ -580,7 +597,7 @@ float* build_region(MATRIX supporto, int k, int n){ //metodo per la costruzione 
     }
     
     
-}
+}*/
 
 /*
 *	Range Query Search
@@ -588,10 +605,10 @@ float* build_region(MATRIX supporto, int k, int n){ //metodo per la costruzione 
 */
 void range_query(params* input) {
     
-    int raggio = input->r;
+    /*int raggio = input->r;
 
     float* Q = input->kdtree;
-    float* L = alloc_matrix(1,/*dimensione dataset*/); //array dei punti la cui distanza da q è minore di r 
+    float* L = alloc_matrix(1,/*dimensione dataset); //array dei punti la cui distanza da q è minore di r 
     
     if(Distance(Q, H(n))>raggio){
         return 0;
@@ -609,7 +626,7 @@ void range_query(params* input) {
     if(n->figliodx)!=NULL{
         L=L+&(range_query(figliodx, Q, r));
     }
-    return L;
+    return L;*/
 }
 
 
