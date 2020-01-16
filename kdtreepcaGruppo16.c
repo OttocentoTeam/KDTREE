@@ -479,7 +479,7 @@ void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
   	for(;;) {
 		while(d[i*col+c] < pivot) i++;
 		while(pivot < d[j*col+c]) j--;
-    		if(i >= j) break;
+    	if(i >= j) break;
 		for(x=0;x<col;x++){
             tmp = d[i*col+x]; 
 			d[i*col+x] = d[j*col+x]; 
