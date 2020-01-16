@@ -457,7 +457,7 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     return node;
 }//buildTree
 
-void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
+/*void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
     int i, j, z;
     for(i = inizio_matrice; i < fine_matrice; i+=col){
         for(z = i+1; z < fine_matrice; z++){
@@ -468,7 +468,28 @@ void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
             }
         }
     }
-}//ordinaDataset
+}*///ordinaDataset-BUBBLESORT FUNZIONANTE
+
+void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
+    if(inizio_matrice >= fine_matrice) return;
+  	int i = inizio_matrice, j = fine_matrice;
+  	int tmp;
+	int x;
+	float pivot = d[i*col+c];
+  	for(;;) {
+		while(d[i*col+c] < pivot) i++;
+		while(pivot < d[j*col+c]) j--;
+    		if(i >= j) break;
+		for(x=0;x<col;x++){
+            tmp = d[i*col+x]; 
+			d[i*col+x] = d[j*col+x]; 
+			d[j*col+x] = tmp;
+		}
+    		i++; j--;
+  	}
+  	ordinaDataset(d,inizio_matrice, i-1,col,c);
+  	ordinaDataset(d, j+1, fine_matrice,col,c);
+}//ordinaDataset-QUICKSORT FUNZIONANTE
 
 void Scambia(float a,float b){
     float tmp;
