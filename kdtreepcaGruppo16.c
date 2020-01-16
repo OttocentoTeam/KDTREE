@@ -97,9 +97,8 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
 void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c);
 void Scambia(float a,float b);
 float EuclideanDistance(float* p, float* q, int dim);
-float minCol (float* col, int dim);
-float maxCol (float* col, int dim);
-
+float minCol (MATRIX D, int rig, int col);
+float maxCol (MATRIX D, int rig, int col);
 
 void* get_block(int size, int elements) { 
     return _mm_malloc(elements*size,16); 
@@ -511,23 +510,23 @@ float EuclideanDistance(float* p, float* q, int dim) { //metodo per il calcolo d
       return sqrt(somma);
 }
 
-float minCol (float* col, int dim){ //metodo per il calcolo del minimo della colonna j
-    float min = col[0]; //prima dimensione
+float minCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo della colonna j
+    float min = D[0]; //prima dimensione
     int i;
-    for(i=0; i<(dim-1);i++){
-        if(col[i]<=min){
-            min=col[i];
+    for(i=1; i<(rig-1);i++){
+        if(D[i*col]<=min){
+            min=D[i*col];
         }
     }
     return min;
 }
 
-float maxCol (float* col, int dim){ //metodo per il calcolo del massimo della colonna j
-    float max= col[0]; //prima dimensione
+float maxCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo della colonna j
+    float max = D[0]; //prima dimensione
     int i;
-    for(i=0;i<(dim-1);i++){
-        if(col[i]>=max){
-            max=col[i];
+    for(i=1; i<(rig-1);i++){
+        if(D[i*col]>=max){
+            max=D[i*col];
         }
     }
     return max;
@@ -535,7 +534,7 @@ float maxCol (float* col, int dim){ //metodo per il calcolo del massimo della co
 
 //FINO A QUA E' CORRETTO
 
-/*float Distance (float* H, float* Q){   //RIVEDERE
+float Distance (float* H, float* Q){   //RIVEDERE
     //cerco Hj min e Hj max
     int dim = input->k;
     float* P =  alloc_matrix(1, dim);
@@ -554,12 +553,34 @@ float maxCol (float* col, int dim){ //metodo per il calcolo del massimo della co
     }
 }    
 
-float* build_region(KDTREE albero, MATRIX DS, int inizio_matrice,int fine_matrice,int dim){ //metodo per la costruzione della regione H a partire dal nodo n
+float* build_Matrix(KDTREE albero, struct tree *nodo, int k, int n){
+    MATRIX supporto = alloc_matrix(n, k);
+    if(nodo==NULL) return NULL;
+    if(nodo->left==NULL && nodo->right==NULL){
+        return NULL;
+    }
+    if(albero->point == nodo->point){
+        
+        (albero->point) 
+        return build_Matrix(albero, )
+    }
+}
+
+float* build_region(MATRIX supporto, int k, int n){ //metodo per la costruzione della regione H a partire dal nodo n
+
+    float* supporto = alloc_matrix(n, k);
+    if(nodo==NULL) return NULL;
+    if(nodo->left==NULL && nodo->right==NULL){
+        return NULL;
+    }
+    if(albero->point == nodo->point){
+
+    }
+
+    }
     
-    float* H = alloc_matrix(dim, 2);
     
-    
-}*/
+}
 
 /*
 *	Range Query Search
@@ -567,10 +588,10 @@ float* build_region(KDTREE albero, MATRIX DS, int inizio_matrice,int fine_matric
 */
 void range_query(params* input) {
     
-    /*int raggio = input->r;
+    int raggio = input->r;
 
     float* Q = input->kdtree;
-    float* L = alloc_matrix(1,/*dimensione dataset); //array dei punti la cui distanza da q è minore di r 
+    float* L = alloc_matrix(1,/*dimensione dataset*/); //array dei punti la cui distanza da q è minore di r 
     
     if(Distance(Q, H(n))>raggio){
         return 0;
@@ -588,7 +609,7 @@ void range_query(params* input) {
     if(n->figliodx)!=NULL{
         L=L+&(range_query(figliodx, Q, r));
     }
-    return L;*/
+    return L;
 }
 
 
