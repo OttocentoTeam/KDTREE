@@ -451,7 +451,7 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     }
     if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
         node->left = buildTree(d,livello++,inizio_matrice,index-1,col);
-        node->right = buildTree(d,livello++,index+1,fine_matrice,c);
+        node->right = buildTree(d,livello++,index+1,fine_matrice,col);
     }
     else if((fine_matrice-inizio_matrice)==1){
         node->right = buildTree(d,livello++,index+1,fine_matrice,col);
@@ -534,7 +534,7 @@ float maxCol (float* col, int dim){ //metodo per il calcolo del massimo della co
 
 //FINO A QUA E' CORRETTO
 
-float Distance (float* H, float* Q){   //RIVEDERE
+/*float Distance (float* H, float* Q){   //RIVEDERE
     //cerco Hj min e Hj max
     int dim = input->k;
     float* P =  alloc_matrix(1, dim);
@@ -558,7 +558,7 @@ float* build_region(KDTREE albero, MATRIX DS, int inizio_matrice,int fine_matric
     float* H = alloc_matrix(dim, 2);
     
     
-}
+}*/
 
 /*
 *	Range Query Search
@@ -566,10 +566,10 @@ float* build_region(KDTREE albero, MATRIX DS, int inizio_matrice,int fine_matric
 */
 void range_query(params* input) {
     
-    int raggio = input->r;
+    /*int raggio = input->r;
 
     float* Q = input->kdtree;
-    float* L = alloc_matrix(1,/*dimensione dataset*/); //array dei punti la cui distanza da q è minore di r 
+    float* L = alloc_matrix(1,/*dimensione dataset); //array dei punti la cui distanza da q è minore di r 
     
     if(Distance(Q, H(n))>raggio){
         return 0;
@@ -587,7 +587,7 @@ void range_query(params* input) {
     if(n->figliodx)!=NULL{
         L=L+&(range_query(figliodx, Q, r));
     }
-    return L;
+    return L;*/
 }
 
 
