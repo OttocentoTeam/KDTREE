@@ -553,14 +553,11 @@ float Distance (float* H, float* Q){   //RIVEDERE
     }
 }    
 
-float* build_region(KDTREE albero, MATRIX DS, int inizio_matrice,int fine_matrice,int col){ //metodo per la costruzione della regione H a partire dal nodo n
+float* build_region(KDTREE albero, MATRIX DS, int inizio_matrice,int fine_matrice,int dim){ //metodo per la costruzione della regione H a partire dal nodo n
     
-    float* H = alloc_matrix(fine_matrice-inizio_matrice, 2);
+    float* H = alloc_matrix(dim, 2);
     
-    /* se n è il nodo radice allora H = dataset, altrimenti per il figlio destro:
-    H(figliodestro)= parte da c invece di 0 che è la dimensione di taglio, la max del padre
-    per il figlio sinistro:
-    H(figliosinistro)=parte da min del padre, fino alla dimensione di taglio c */
+    
 }
 
 /*
