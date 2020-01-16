@@ -48,7 +48,7 @@
 #include <xmmintrin.h>
 
 #define	MATRIX		float*
-#define	KDTREE		float* // modificare con il tipo di dato utilizzato
+#define	KDTREE		struct tree* // modificare con il tipo di dato utilizzato
 
 typedef struct {
     char* filename; //nome del file, estensione .ds per il data set, estensione .qs per l'eventuale query set
@@ -433,6 +433,7 @@ void kdtree(params* input) {
     int l = 0;
     root = buildTree(d,l,inizio_matrice,fine_matrice,col);
     printf("Creazione del kdtree terminata\n");
+    input->kdtree = root;
     printf("Successo!\n");
 }//kdtree
 
