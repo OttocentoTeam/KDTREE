@@ -96,6 +96,9 @@ struct tree{
 struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,int col);
 void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c);
 void Scambia(float a,float b);
+float EuclideanDistance(float* p, float* q, int dim);
+float minCol (float* col, int dim);
+float maxCol (float* col, int dim);
 
 
 void* get_block(int size, int elements) { 
@@ -498,21 +501,98 @@ void Scambia(float a,float b){
     b = tmp;
 }//Scambia
 
+float EuclideanDistance(float* p, float* q, int dim) { //metodo per il calcolo della distanza tra due punti
+      float somma=0;
+      for(int i=0; i<dim; i++){
+            int var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
+            somma+=var;
+      }
+      return sqrt(somma);
+}
+
+float minCol (float* col, int dim){ //metodo per il calcolo del minimo della colonna j
+    float min = col[0]; //prima dimensione
+    int i;
+    for(i=0; i<(dim-1);i++){
+        if(col[i]<=min){
+            min=col[i];
+        }
+    }
+    return min;
+}
+
+float maxCol (float* col, int dim){ //metodo per il calcolo del massimo della colonna j
+    float max= col[0]; //prima dimensione
+    int i;
+    for(i=0;i<(dim-1);i++){
+        if(col[i]>=max){
+            max=col[i];
+        }
+    }
+    return max;
+}
+
+//FINO A QUA E' CORRETTO
+
+float Distance (float* H, float* Q){   //RIVEDERE
+    //cerco Hj min e Hj max
+    int dim = input->k;
+    float* P =  alloc_matrix(1, dim);
+    int j;
+    for(j=0;j<dim; j++){
+        if(Q[j]<=H[j]){
+            P[j]=H[j];
+        }
+        else if (Q[j]>=*(H+j+1)){
+            P[j]=*(H+j+1);
+        }
+        else{
+            P[j] = Q[j];
+        }    
+    return EuclideanDistance(P, Q, dim);
+    }
+}    
+
+float* build_region(KDTREE albero, MATRIX DS, int inizio_matrice,int fine_matrice,int col){ //metodo per la costruzione della regione H a partire dal nodo n
+    
+    float* H = alloc_matrix(fine_matrice-inizio_matrice, 2);
+    
+    /* se n è il nodo radice allora H = dataset, altrimenti per il figlio destro:
+    H(figliodestro)= parte da c invece di 0 che è la dimensione di taglio, la max del padre
+    per il figlio sinistro:
+    H(figliosinistro)=parte da min del padre, fino alla dimensione di taglio c */
+}
+
 /*
 *	Range Query Search
 * 	======================
 */
 void range_query(params* input) {
     
-    // -------------------------------------------------
-    // Codificare qui l'algoritmo di ricerca
-    // -------------------------------------------------
+    int raggio = input->r;
 
-    // Calcola il risultato come una matrice di nQA coppie di interi
-    // (id_query, id_vicino)
-    // o in altro formato
-    // -------------------------------------------------
+    float* Q = input->kdtree;
+    float* L = alloc_matrix(1,/*dimensione dataset*/); //array dei punti la cui distanza da q è minore di r 
+    
+    if(Distance(Q, H(n))>raggio){
+        return 0;
+    }
+    float* P = alloc_matrix(1, input->k);
+
+    int Dis = EuclideanDistance(Q,P, input->k);
+    if(Dis<=raggio){
+       //append Q dentro L
+
+    }
+    if(n->figliosx)!=NULL{
+        L=L+&(range_query(figliosx, Q, r));
+    }
+    if(n->figliodx)!=NULL{
+        L=L+&(range_query(figliodx, Q, r));
+    }
+    return L;
 }
+
 
 int main(int argc, char** argv) {
     
