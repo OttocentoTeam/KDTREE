@@ -459,7 +459,7 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
 
 void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
     int i, j, z;
-    for(i = inizio_matrice, i < fine_matrice, i+=col){
+    for(i = inizio_matrice; i < fine_matrice; i+=col){
         for(z = i+1; z < fine_matrice; z++){
             if((d[i*col+c])>(d[z*col+c])){
                 for(j = 0; j < col; j++){
