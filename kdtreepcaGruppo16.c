@@ -110,6 +110,7 @@ float Distance (float* H, float* Q, int k);
 float minDim(KDTREE albero, int dim);
 float maxDim(KDTREE albero, int dim);
 float* build_region(struct tree *nodo, int h);
+struct list* ListaPunti(KDTREE albero, float* Q, float r, int h);
 
 void* get_block(int size, int elements) { 
     return _mm_malloc(elements*size,16); 
@@ -244,11 +245,17 @@ float* centraPunto(int n, int k, MATRIX ds, float* Q){
 }
 
 MATRIX mul(float* q, MATRIX v, int k, int h){
-    MATRIX mat = alloc_matrix(h, k);
-    for(int i=0; i<k*h; i+=k){
-        for(int j=0; j<k; j++){
-            mat[i*k+j]=(v[i*k+j])*(q[j]);
+    MATRIX mat = alloc_matrix(1, h);
+    for(int i = 0; i < h; i++){
+        float somma = 0.0;
+        int index = 0;
+        for(int j = 0; j<k*h; j+=h){
+            if(index<k){
+                somma+=q[index]*v[i*k+j];
+                index++;
+            }
         }
+        mat[i]=somma;
     }
     return mat;
 }
@@ -484,7 +491,7 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     int i;
     struct tree* node = (struct tree*)malloc(sizeof(struct tree));
     node->point = (float*)malloc(col*sizeof(float));
-    for(i = 0; i < col; i++){
+    for(i = 0; i <= col; i++){
         node->point[i] = d[(index*col)+i];
     }
     if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
@@ -494,7 +501,7 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     else if((fine_matrice-inizio_matrice)==1){
         node->right = buildTree(d,livello++,index+1,fine_matrice,col);
     }
-    free(node);
+    //free(node);
     return node;
 }//buildTree
 
@@ -596,8 +603,9 @@ float maxCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo de
 
 float EuclideanDistance(float* p, float* q, int h) { //metodo per il calcolo della distanza tra due punti
       float somma=0;
+      int var = 0;
       for(int i=0; i<h; i++){
-            int var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
+            var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
             somma+=var;
       }
       return sqrt(somma);
@@ -612,8 +620,11 @@ float minDim(KDTREE albero, int dim){   //Metodo per il calcolo del minimo su un
         return min;
     }
     if((albero->left)!=NULL && (albero->right)!=NULL){
+        //printf("sx e dx\n");
         float sx = minDim(albero->left, dim);
+        //printf("sx\n");
         float dx = minDim(albero->right, dim);
+        //printf("dx\n");
         if(sx<=dx){
             tmp = sx;
         }
@@ -665,12 +676,15 @@ float maxDim(KDTREE albero, int dim){   //Metodo per il calcolo del massimo su u
 }
 
 
-float* build_region(struct tree *nodo, int h){ //metodo per la costruzione della regione H a partire dal nodo n
-      float* H = alloc_matrix(h, 2);
+MATRIX build_region(struct tree *nodo, int k){ //metodo per la costruzione della regione H a partire dal nodo n
+      MATRIX H = alloc_matrix(k, 2);
       int i;
-      for(i=0; i<h; i++){
+      for(i=0; i<k; i++){
+          //printf("trovo minimo e massimo\n");
           H[i*2]=minDim(nodo, i);
+          //printf("min\n");
           H[i*2+1]=maxDim(nodo, i);
+          //printf("max\n");
       }
       return H;
 }
@@ -697,24 +711,30 @@ float Distance (float* H, float* Q, int k){
 *	Range Query Search
 * 	======================
 */
-struct list* ListaPunti(KDTREE albero, float* Q, int r, int h){
+struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
     if(r<0) return NULL;
-    struct list* Lista = (struct list*) malloc (sizeof(struct list));
-    float* H = build_region(albero, h);
-    if((Distance(Q, albero->point, h))>0){
-        return 0;
+    struct list* Lista = (struct list*)malloc(sizeof(struct list));
+    printf("creazione della regione\n");
+    MATRIX H = build_region(albero, k);
+    printf("regione creata\n");
+    if((Distance(Q, albero->point, k))>0){
+        return NULL;
     }
     float* P = albero->point;
-    if(EuclideanDistance(P,Q,h)<=r){
-        for(int i=0; i<h; i++){
-            Lista->point[i]=P[i];
-        }
+    printf("p fatto\n");
+    float ed = EuclideanDistance(P,Q,k);
+    if(ed<=r){
+        printf("Aggiunta del punto\n");
+        Lista->point = albero->point;
+        printf("aggiunto punto nella lista\n");
     }
     if(albero->left != NULL){
-        Lista->next=ListaPunti(albero->left, Q, r, h);
+        printf("vado a sx\n");
+        Lista->next=ListaPunti(albero->left, Q, r, k);
     }
     if(albero->right != NULL){
-        Lista->next=ListaPunti(albero->right, Q, r, h);
+        printf("vado a dx\n");
+        Lista->next=ListaPunti(albero->right, Q, r, k);
     }
     return Lista;
 }
@@ -722,14 +742,18 @@ struct list* ListaPunti(KDTREE albero, float* Q, int r, int h){
 void range_query(params* input) {
     int dim = input->k;
     int pca = input->h;
+    int num = input->n;
     int dimqs = input->nq;
+    MATRIX d = input->ds;
     MATRIX queryset = input->qs;
     float raggio = input->r;
     KDTREE albero = input->kdtree;
     float* punto;
+    struct list* List;
     
     for(int i=0; i<dimqs*dim; i+=dim){
         float* punto;
+        //printf("si prende punto da qs\n");
         float* puntoqs = alloc_matrix(1,dim);
         for(int j=0; j<dim; j++){
             puntoqs[j]=queryset[i*dim+j];
@@ -737,20 +761,22 @@ void range_query(params* input) {
 
         if (pca>0){ //nel caso in cui fosse abilitata la pca
 
-    /* In particolare, il punto Q dovr`a essere centrato rispetto alla media del dataset 
-    e trasformato moltiplicandolo per la matrice dei load V . Quindi, sia b Q il punto 
-    Q centrato sulla media del dataset, la range query deve essere eﬀettuata sul punto 
-    ................................Q′ = Qcentrato*V........................ */
-
-        float* qc = centraPunto (input->n, dim, input->ds, puntoqs);
-        float* q1 = mul(qc,V, dim, pca); //va fatta la moltiplicazione vettore matrice
-        punto = q1;
+        /* In particolare, il punto Q dovr`a essere centrato rispetto alla media del dataset 
+        e trasformato moltiplicandolo per la matrice dei load V . Quindi, sia b Q il punto 
+        Q centrato sulla media del dataset, la range query deve essere eﬀettuata sul punto 
+        ................................Q′ = Qcentrato*V........................ */
+            //printf("si centra il punto\n");
+            float* qc = centraPunto (num, dim, d, puntoqs);
+            //printf("ok\n");
+            float* q1 = mul(qc,V, dim, pca); //va fatta la moltiplicazione vettore matrice
+            //printf("mul fatta\n");
+            punto = q1;
         }
         else{
+            //printf("NON si centra punto");
             punto = puntoqs;
         }
-        struct list* List;
-        List = ListaPunti(albero, punto,raggio, pca);
+        List = ListaPunti(albero, punto, raggio, dim);
     }
 }
 
