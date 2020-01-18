@@ -470,7 +470,7 @@ void pca(int n, int k, int h, MATRIX ds) {
 void kdtree(params* input) {
     int inizio_matrice = 0;
     int fine_matrice = input->n-1;
-    int col = input->k-1;
+    int col = input->k;
     MATRIX d = input->ds;
     struct tree *root;
     printf("Creazione del kdtree iniziata\n");
@@ -485,13 +485,13 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     if(d==0){
         return NULL;
     }
-    int c = livello%col;
+    int c = livello%(col-1);
     ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
     int index = ((fine_matrice-inizio_matrice)/2)+inizio_matrice;
     int i;
     struct tree* node = (struct tree*)malloc(sizeof(struct tree));
     node->point = (float*)malloc(col*sizeof(float));
-    for(i = 0; i <= col; i++){
+    for(i = 0; i < col; i++){
         node->point[i] = d[(index*col)+i];
     }
     if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
