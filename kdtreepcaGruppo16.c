@@ -105,7 +105,7 @@ float EuclideanDistance(float* p, float* q, int dim);
 //float minCol (MATRIX D, int rig, int col);
 //float maxCol (MATRIX D, int rig, int col);
 //float* build_Matrix(KDTREE albero, struct tree *nodo, int k, int n,int index_supporto);
-float Distance (float* H, float* Q, int k);
+float Distance (MATRIX H, float* Q, int k);
 
 float minDim(KDTREE albero, int dim);
 float maxDim(KDTREE albero, int dim);
@@ -605,11 +605,11 @@ float maxCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo de
 */
 
 float EuclideanDistance(float* p, float* q, int h) { //metodo per il calcolo della distanza tra due punti
-      float somma=0;
-      int var = 0;
+      float somma;
+      //float var = 0;
       for(int i=0; i<h; i++){
-            var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
-            somma+=var;
+           // var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
+            somma+=(p[i]-q[i])*(p[i]-q[i]);
       }
       return sqrt(somma);
 }
@@ -692,7 +692,7 @@ MATRIX build_region(struct tree *nodo, int k){ //metodo per la costruzione della
       return H;
 }
 
-float Distance (float* H, float* Q, int k){
+float Distance (MATRIX H, float* Q, int k){ //prima c'era float* H al posto di MATRIX H
     // cerco il punto P della regione H piu` prossimo a Q 
     int j;
     float* P = alloc_matrix(1, k);
@@ -720,15 +720,27 @@ struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
     printf("creazione della regione\n");
     MATRIX H = build_region(albero, k);
     printf("regione creata\n");
-    if((Distance(Q, albero->point, k))>0){
-        return NULL;
+    /*if((Distance(Q, albero->point, k))>0){
+        return 0;
+    }*/
+    if(Distance(H,Q,k)>=r){
+        return 0; 
     }
     float* P = albero->point;
+    //float* P = (float*)malloc(k*sizeof(float));
+    //for(int i = 0; i < k; i++){
+      //  P[i] = albero->point[i];
+    //}
+    //P = albero->point;
     printf("p fatto\n");
     float ed = EuclideanDistance(P,Q,k);
+    printf("Distanza euclidea calcolata\n");
     if(ed<=r){
         printf("Aggiunta del punto\n");
-        Lista->point = albero->point;
+        Lista->point = P;
+        //for(int i = 0; i < k; i++){
+          //  Lista->point[i] = P[i];
+        //}
         printf("aggiunto punto nella lista\n");
     }
     if(albero->left != NULL){
