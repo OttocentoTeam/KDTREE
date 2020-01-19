@@ -473,20 +473,23 @@ void kdtree(params* input) {
     int col = input->k;
     MATRIX d = input->ds;
     struct tree *root;
-    printf("Creazione del kdtree iniziata\n");
+    //printf("Creazione del kdtree iniziata\n");
     int l = 0;
     root = buildTree(d,l,inizio_matrice,fine_matrice,col);
-    printf("Creazione del kdtree terminata\n");
+    //printf("Creazione del kdtree terminata\n");
     input->kdtree = root;
-    printf("Successo!\n");
+    //printf("Successo!\n");
 }//kdtree
 
 struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,int col){
     if(d==0){
         return NULL;
     }
-    int c = livello%(col-1);
-    ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
+    int c;
+    if(livello < col){
+        c = livello%col;
+        ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
+    }
     int index = ((fine_matrice-inizio_matrice)/2)+inizio_matrice;
     int i;
     struct tree* node = (struct tree*)malloc(sizeof(struct tree));
