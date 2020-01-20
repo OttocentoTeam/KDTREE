@@ -711,7 +711,7 @@ MATRIX build_region_figlio(struct tree *nodo, struct tree *nodo_padre, int k){
                H_figlio[i*2+1] = H_padre[i*2+1];
             }
             else{
-                if(nodo->point[nodo->cut_dim]<nodo_padre->point[nodo->cut_dim]){ //per la dimensione di taglio
+                if((nodo->point[nodo->cut_dim])<(nodo_padre->point[nodo->cut_dim])){ //per la dimensione di taglio
                     //per il figlio sx
                     H_figlio[i*2] = H_padre[i*2];
                     H_figlio[i*2+1] = nodo_padre->point[nodo->cut_dim];
@@ -756,7 +756,7 @@ struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
     printf("creazione della regione\n");
     MATRIX H;
     if(albero->cut_dim>0){ //check sulla dimensione di taglio per la costruzione della regione 
-        H=build_region_figlio()
+        H=build_region_figlio(albero, albero->father, k);
     }
     else{
         H=build_region_radice(albero, k);
