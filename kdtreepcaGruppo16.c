@@ -90,6 +90,7 @@ typedef struct {
 struct tree{
     float* point;
     int cut_dim;
+    struct tree *father;
     struct tree *left;
     struct tree *right;
 };//tree
@@ -448,10 +449,10 @@ void pca(int n, int k, int h, MATRIX ds) {
                 }
 
                 //inserisci v come j-esima colonna di V
-                z=0;
+                int w=0;
                 for(int i=j; i<k*h; i+=h){
-                    V[i]=u[z];
-                    z++;
+                    V[i]=v[w];
+                    w++;
                 }
 
                 //aggiorna il dataset
@@ -497,6 +498,12 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     node->point = (float*)malloc(col*sizeof(float));
     for(i = 0; i < col; i++){
         node->point[i] = d[(index*col)+i];
+    }
+    if(c==0){
+        node->father = NULL;
+    } else{
+        node->left->father = node;
+        node->right->father = node;
     }
     node->cut_dim = c;
     if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
