@@ -89,6 +89,7 @@ typedef struct {
 
 struct tree{
     float* point;
+    int cut_dim;
     struct tree *left;
     struct tree *right;
 };//tree
@@ -497,6 +498,7 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     for(i = 0; i < col; i++){
         node->point[i] = d[(index*col)+i];
     }
+    node->cut_dim = c;
     if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
         node->left = buildTree(d,livello++,inizio_matrice,index-1,col);
         node->right = buildTree(d,livello++,index+1,fine_matrice,col);
