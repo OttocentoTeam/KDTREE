@@ -681,7 +681,7 @@ float maxDim(KDTREE albero, int dim){   //Metodo per il calcolo del massimo su u
 }
 
 
-MATRIX build_region(struct tree *nodo, int k){ //metodo per la costruzione della regione H a partire dal nodo n
+MATRIX build_region_radice(struct tree *nodo, int k){ //metodo per la costruzione della regione H del nodo radice a partire dal nodo n
       MATRIX H = alloc_matrix(k, 2);
       int i;
       for(i=0; i<k; i++){
@@ -692,6 +692,33 @@ MATRIX build_region(struct tree *nodo, int k){ //metodo per la costruzione della
           //printf("max\n");
       }
       return H;
+}
+
+MATRIX build_region_figlio(struct tree *nodo, struct tree *nodo_padre, int k){
+        MATRIX H_padre = build_region_radice(nodo_padre, k);
+        MATRIX H_figlio = alloc_matrix(k, 2);
+        int i;
+        for(i=0; i<k; i++){
+            if(i!=nodo->cut_dim){ //per dimensioni diverse da quella di taglio
+               H_figlio[i*2] = H_padre[i*2];
+               H_figlio[i*2+1] = H_padre[i*2+1];
+            }
+            else{
+                if(nodo->point[nodo->cut_dim]<nodo_padre->point[nodo->cut_dim]){ //per la dimensione di taglio
+                    //per il figlio sx
+                    H_figlio[i*2] = H_padre[i*2];
+                    H_figlio[i*2+1] = nodo_padre->point[nodo->cut_dim];
+                }
+                else{
+                    //per il figlio dx
+                    H_figlio[i*2] = nodo_padre->point[nodo->cut_dim];
+                    H_figlio[i*2+1] = H_padre[i*2+1];
+                }
+                
+            }
+        }
+        dealloc_matrix(H_padre);
+        return H_figlio;
 }
 
 float Distance (MATRIX H, float* Q, int k){ //prima c'era float* H al posto di MATRIX H
@@ -720,7 +747,13 @@ struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
     if(r<0) return NULL;
     struct list* Lista = (struct list*)malloc(sizeof(struct list));
     printf("creazione della regione\n");
-    MATRIX H = build_region(albero, k);
+    MATRIX H;
+    if(albero->cut_dim>0){ //check sulla dimensione di taglio per la costruzione della regione 
+        H=build_region_figlio()
+    }
+    else{
+        H=build_region_radice(albero, k);
+    }
     printf("regione creata\n");
     /*if((Distance(Q, albero->point, k))>0){
         return 0;
