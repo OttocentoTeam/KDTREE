@@ -487,11 +487,12 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     if(d==0){
         return NULL;
     }
-    int c;
-    if(livello < col){
+    int c = livello%col;
+    ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
+    /*if(livello < col){
         c = livello%col;
         ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
-    }
+    }*/
     int index = ((fine_matrice-inizio_matrice)/2)+inizio_matrice;
     int i;
     struct tree* node = (struct tree*)malloc(sizeof(struct tree));
@@ -499,14 +500,14 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     for(i = 0; i < col; i++){
         node->point[i] = d[(index*col)+i];
     }
-    if(c==0 && livello==0){
+    /*if(c==0 && livello==0){
         node->father = NULL;
     } else{
         printf("padri\n");
         node->left->father = node;
         node->right->father = node;
         printf("padri vecchi\n");
-    }
+    }*/
     node->cut_dim = c;
     for(int x = inizio_matrice; x < index; x++){
         if(d[x*col+c]==d[index*col+c]){
