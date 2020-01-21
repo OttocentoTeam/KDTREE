@@ -102,7 +102,7 @@ struct list{
 
 struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,int col);
 void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c);
-//void Scambia(float a,float b);
+void Scambia(float a,float b);
 float EuclideanDistance(float* p, float* q, int dim);
 //float minCol (MATRIX D, int rig, int col);
 //float maxCol (MATRIX D, int rig, int col);
@@ -499,19 +499,36 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     for(i = 0; i < col; i++){
         node->point[i] = d[(index*col)+i];
     }
-    if(c==0){
+    if(c==0 && livello==0){
         node->father = NULL;
     } else{
+        printf("padri\n");
         node->left->father = node;
         node->right->father = node;
+        printf("padri vecchi\n");
     }
     node->cut_dim = c;
-    if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
+    for(int x = inizio_matrice; x < index; x++){
+        if(d[x*col+c]==d[index*col+c]){
+            for(int y = 0; y < col; y++){
+                Scambia(d[x*col+y],d[index*col+y]);
+            }
+            index = x;
+            break;
+        }
+    }
+    /*if((fine_matrice-inizio_matrice)!=0 && (fine_matrice-inizio_matrice)!=1){
         node->left = buildTree(d,livello++,inizio_matrice,index-1,col);
         node->right = buildTree(d,livello++,index+1,fine_matrice,col);
-    }
+    }*/
+    int startDX = index+1;
+    int endSX = index-1;
+    if(endSX>inizio_matrice && startDX<fine_matrice){
+        node->left = buildTree(d,livello++,inizio_matrice,endSX,col);
+        node->right = buildTree(d,livello++,startDX,fine_matrice,col);
+    } 
     else if((fine_matrice-inizio_matrice)==1){
-        node->right = buildTree(d,livello++,index+1,fine_matrice,col);
+        node->right = buildTree(d,livello++,startDX,fine_matrice,col);
     }
     //free(node);
     return node;
@@ -551,14 +568,14 @@ void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c){
   	ordinaDataset(d, j+1, fine_matrice,col,c);
 }//ordinaDataset-QUICKSORT FUNZIONANTE
 
-/*void Scambia(float a,float b){
+void Scambia(float a,float b){
     float tmp;
     tmp = a;
     a = b;
     b = tmp;
 }
 
-float minCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo della colonna j
+/*float minCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo della colonna j
     float min = D[0]; //prima dimensione
     int i;
     for(i=1; i<(rig-1);i++){
