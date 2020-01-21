@@ -702,7 +702,13 @@ MATRIX build_region_radice(struct tree *nodo, int k){ //metodo per la costruzion
 }
 
 MATRIX build_region_figlio(struct tree *nodo, struct tree *nodo_padre, int k){
-        MATRIX H_padre = build_region_radice(nodo_padre, k);
+        MATRIX H_padre;
+        if(nodo_padre->cut_dim==0){
+            MATRIX H_padre = build_region_radice(nodo_padre, k);
+        }
+        else{
+            MATRIX H_padre = build_region_figlio(nodo_padre, nodo_padre->father,k);
+        }
         MATRIX H_figlio = alloc_matrix(k, 2);
         int i;
         for(i=0; i<k; i++){
@@ -711,7 +717,7 @@ MATRIX build_region_figlio(struct tree *nodo, struct tree *nodo_padre, int k){
                H_figlio[i*2+1] = H_padre[i*2+1];
             }
             else{
-                if((nodo->point[nodo->cut_dim])<(nodo_padre->point[nodo->cut_dim])){ //per la dimensione di taglio
+                if((nodo->point[nodo_padre->cut_dim])<(nodo_padre->point[nodo_padre->cut_dim])){ //per la dimensione di taglio
                     //per il figlio sx
                     H_figlio[i*2] = H_padre[i*2];
                     H_figlio[i*2+1] = nodo_padre->point[nodo->cut_dim];
