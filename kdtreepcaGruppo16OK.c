@@ -489,11 +489,12 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     if(d==0){
         return NULL;
     }
-    int c;
-    if(livello < col){
+    int c = livello%col;
+    /*if(livello < col){
         c = livello%col;
         ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
-    }
+    }*/
+    ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
     int index = ((fine_matrice-inizio_matrice)/2)+inizio_matrice;
     int i;
     struct tree* node = (struct tree*)malloc(sizeof(struct tree));
@@ -525,6 +526,9 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     }*/
     int startDX = index+1;
     int endSX = index-1;
+    /*if(endSX<0){
+        node->right = buildTree(d,livello++,startDX,fine_matrice,col);
+    }*/
     if(endSX>inizio_matrice && startDX<fine_matrice){
         node->left = buildTree(d,livello++,inizio_matrice,endSX,col);
         node->right = buildTree(d,livello++,startDX,fine_matrice,col);
@@ -534,10 +538,10 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     }
     //free(node);
     
-    //for(int i=0; i<col; i++){
-    //    printf("%f ,", node->point[i]);
-    //}
-    //printf("\n");
+    for(int i=0; i<col; i++){
+        printf("%f ,", node->point[i]);
+    }
+    printf("\n");
     return node;
 }//buildTree
 
@@ -582,14 +586,23 @@ void Scambia(float a,float b){
     b = tmp;
 }
 
-float EuclideanDistance(float* p, float* q, int h) { //metodo per il calcolo della distanza tra due punti
+float EuclideanDistance(float* p, float* q, int k) { //metodo per il calcolo della distanza tra due punti
       float somma=0.0;
       //float var = 0;
-      for(int i=0; i<h; i++){
+      for(int i=0; i<k; i++){
            // var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
-            somma+=(p[i]-q[i])*(p[i]-q[i]);
+            if(p[i]>=q[i]){
+                somma+=(p[i]-q[i])*(p[i]-q[i]);
+            }
+            else{
+                somma+=(q[i]-p[i])*(q[i]-p[i]);
+            }
+            //somma+=(p[i]-q[i])*(p[i]-q[i]);
       }
-      return sqrt(somma);
+      
+      float val=sqrt(somma);
+      //printf("%f\n", val);
+      return val;
 }
 
 float minDim(KDTREE albero, int dim){   //Metodo per il calcolo del minimo su una dimensione
@@ -697,6 +710,9 @@ MATRIX build_region_figlio(struct tree *nodo, float* punto_padre, int c_padre, f
 }
 
 int assegnaRegioni(KDTREE albero, int k){
+    if(albero==NULL){
+        return 0;
+    }
     if(albero->left ==NULL && albero->right==NULL){
         return 0;
     }
@@ -719,9 +735,9 @@ int assegnaRegioni(KDTREE albero, int k){
             dealloc_matrix(H_figlio);
         }
         
-        /*for(int i=0; i<k; i++){
+        for(int i=0; i<k; i++){
             printf("%f\n", albero->right->H[i]);
-        }*/
+        }
 
         cont++;
         assegnaRegioni(albero->left, k);
@@ -774,6 +790,7 @@ float Distance (MATRIX H, float* Q, int k){ //prima c'era float* H al posto di M
 * 	======================
 */
 struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
+    if(albero==NULL) return NULL;
     if(r<0) return NULL;
     struct list* Lista = (struct list*)malloc(sizeof(struct list));
     
@@ -784,7 +801,7 @@ struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
 
     printf("p fatto\n");
     float ed = EuclideanDistance(P,Q,k);
-    printf("Distanza euclidea calcolata\n");
+    printf("Distanza euclidea calcolata: %f\n", ed);
     if(ed<=r){
         printf("Aggiunta del punto\n");
         Lista->point = P;
