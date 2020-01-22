@@ -73,6 +73,8 @@ typedef struct {
     //matrici 
     MATRIX U; //matrice U restituita dall'algoritmo PCA
     MATRIX V; //matrice V restituita dall'algoritmo PCA
+    int cont = 0;
+    int punti = 0;
 /*
 * 
 *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
@@ -90,7 +92,7 @@ typedef struct {
 struct tree{
     float* point;
     int cut_dim;
-    struct tree *father;
+    float* H;
     struct tree *left;
     struct tree *right;
 };//tree
@@ -477,7 +479,13 @@ void kdtree(params* input) {
     struct tree *root;
     //printf("Creazione del kdtree iniziata\n");
     int l = 0;
-    root = buildTree(d,l,inizio_matrice,fine_matrice,col);
+    int pca = input->h;
+    if(pca>0){
+        root = buildTree(U,l,inizio_matrice,input->h-1,pca);
+    }
+    else {
+        root = buildTree(d,l,inizio_matrice,fine_matrice,col);
+    }
     //printf("Creazione del kdtree terminata\n");
     input->kdtree = root;
     //printf("Successo!\n");
@@ -488,11 +496,11 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
         return NULL;
     }
     int c = livello%col;
-    ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
     /*if(livello < col){
         c = livello%col;
         ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
     }*/
+    ordinaDataset(d,inizio_matrice,fine_matrice,col,c);
     int index = ((fine_matrice-inizio_matrice)/2)+inizio_matrice;
     int i;
     struct tree* node = (struct tree*)malloc(sizeof(struct tree));
@@ -524,6 +532,9 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     }*/
     int startDX = index+1;
     int endSX = index-1;
+    /*if(endSX<0){
+        node->right = buildTree(d,livello++,startDX,fine_matrice,col);
+    }*/
     if(endSX>inizio_matrice && startDX<fine_matrice){
         node->left = buildTree(d,livello++,inizio_matrice,endSX,col);
         node->right = buildTree(d,livello++,startDX,fine_matrice,col);
@@ -532,6 +543,11 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
         node->right = buildTree(d,livello++,startDX,fine_matrice,col);
     }
     //free(node);
+    
+    for(int i=0; i<col; i++){
+        printf("%f ,", node->point[i]);
+    }
+    printf("\n");
     return node;
 }//buildTree
 
@@ -576,69 +592,27 @@ void Scambia(float a,float b){
     b = tmp;
 }
 
-/*float minCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo della colonna j
-    float min = D[0]; //prima dimensione
-    int i;
-    for(i=1; i<(rig-1);i++){
-        if(D[i*col]<=min){
-            min=D[i*col];
-        }
-    }
-    return min;
-}
-
-float maxCol (MATRIX D, int rig, int col){ //metodo per il calcolo del minimo della colonna j
-    float max = D[0]; //prima dimensione
-    int i;
-    for(i=1; i<(rig-1);i++){
-        if(D[i*col]>=max){
-            max=D[i*col];
-        }
-    }
-    return max;
-}
-
-//FINO A QUA E' CORRETTO
-
-
-/*float* build_Matrix(KDTREE albero, struct tree *nodo, int k, int n,int index_supporto){
-    // a index_supporto quando lo richiamiamo nel build_region lo facciamo partire da 0
-    // e poi ci penserà il build_Matrix a incrementarlo
-    MATRIX supporto = alloc_matrix(n, k);
-    if(nodo==NULL) return NULL;
-    if(nodo->left==NULL && nodo->right==NULL){
-        return NULL;
-    }
-    int i;
-    int j;
-    for(i = 0; i < k; i++){
-        if(albero->point[i]==nodo->point[i]){
-            supporto[index_supporto] = nodo->point[i];
-            index_supporto++;
-        }
-        else{
-            int index_cancellazione = index_supporto;
-            for(j = 0; j < index_cancellazione; j++){
-                supporto[j] = 0;
-                index_supporto--;
-            }
-            break;
-        }
-    }
-    build_Matrix(albero,nodo->left,k,n,index_supporto);
-    build_Matrix(albero,nodo->right,k,n,index_supporto);
-    return supporto;
-}//build_Matrix
-*/
-
-float EuclideanDistance(float* p, float* q, int h) { //metodo per il calcolo della distanza tra due punti
-      float somma;
+float EuclideanDistance(float* p, float* q, int k) { //metodo per il calcolo della distanza tra due punti
+      float somma=0.0;
       //float var = 0;
-      for(int i=0; i<h; i++){
-           // var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
-            somma+=(p[i]-q[i])*(p[i]-q[i]);
+      /*for(int x = 0; x < k; x++){
+          printf("%f %f\n",p[x],q[x]);
       }
-      return sqrt(somma);
+      exit(1);*/
+      for(int i=0; i<k; i++){
+           // var = ((q[i])-(p[i]))*((q[i])-(p[i])); //differenza delle k dimensioni ed elevamento al 2
+            if(p[i]>=q[i]){
+                somma+=(p[i]-q[i])*(p[i]-q[i]);
+            }
+            else{
+                somma+=(q[i]-p[i])*(q[i]-p[i]);
+            }
+            //somma+=(p[i]-q[i])*(p[i]-q[i]);
+      }
+      
+      float val=sqrtf(somma);
+      //printf("%f\n", val);
+      return val;
 }
 
 float minDim(KDTREE albero, int dim){   //Metodo per il calcolo del minimo su una dimensione
@@ -719,37 +693,88 @@ MATRIX build_region_radice(struct tree *nodo, int k){ //metodo per la costruzion
       return H;
 }
 
-MATRIX build_region_figlio(struct tree *nodo, struct tree *nodo_padre, int k){
-        MATRIX H_padre;
-        if(nodo_padre->cut_dim==0){
-            MATRIX H_padre = build_region_radice(nodo_padre, k);
-        }
-        else{
-            MATRIX H_padre = build_region_figlio(nodo_padre, nodo_padre->father,k);
-        }
+MATRIX build_region_figlio(struct tree *nodo, float* punto_padre, int c_padre, float* H_padre, int k){
+        
         MATRIX H_figlio = alloc_matrix(k, 2);
         int i;
         for(i=0; i<k; i++){
-            if(i!=nodo->cut_dim){ //per dimensioni diverse da quella di taglio
+            if(i!=c_padre){ //per dimensioni diverse da quella di taglio
                H_figlio[i*2] = H_padre[i*2];
                H_figlio[i*2+1] = H_padre[i*2+1];
             }
             else{
-                if((nodo->point[nodo_padre->cut_dim])<(nodo_padre->point[nodo_padre->cut_dim])){ //per la dimensione di taglio
+                if((nodo->point[c_padre])<(punto_padre[c_padre])){ //per la dimensione di taglio
                     //per il figlio sx
                     H_figlio[i*2] = H_padre[i*2];
-                    H_figlio[i*2+1] = nodo_padre->point[nodo->cut_dim];
+                    H_figlio[i*2+1] = punto_padre[c_padre];
                 }
                 else{
                     //per il figlio dx
-                    H_figlio[i*2] = nodo_padre->point[nodo->cut_dim];
+                    H_figlio[i*2] = punto_padre[c_padre];
                     H_figlio[i*2+1] = H_padre[i*2+1];
                 }
                 
             }
         }
-        dealloc_matrix(H_padre);
         return H_figlio;
+}
+
+int assegnaRegioni(KDTREE albero, int k){
+    if(albero==NULL){
+        return 0;
+    }
+    if(albero->left ==NULL && albero->right==NULL){
+        return 0;
+    }
+    if(cont==0){
+        float* H_radice = alloc_matrix(2,k);
+        H_radice = build_region_radice(albero, k);
+        albero->H=H_radice;
+        dealloc_matrix(H_radice);
+        if(albero->left!=NULL){
+            float* H_figlio = alloc_matrix(2,k);
+            H_figlio=build_region_figlio(albero->left, albero->point, albero->cut_dim, albero->H, k);
+            albero->left->H= H_figlio;
+            dealloc_matrix(H_figlio);
+        }
+
+        if(albero->right!=NULL){
+            float* H_figlio = alloc_matrix(2,k);
+            H_figlio=build_region_figlio(albero->right, albero->point, albero->cut_dim, albero->H, k);
+            albero->right->H=H_figlio;
+            dealloc_matrix(H_figlio);
+        }
+        
+        for(int i=0; i<k; i++){
+            printf("%f\n", albero->right->H[i]);
+        }
+
+        cont++;
+        assegnaRegioni(albero->left, k);
+        assegnaRegioni(albero->right, k);
+    }
+    else{
+        if(albero->left!=NULL){
+            float* H_figlio = alloc_matrix(2,k);
+            H_figlio=build_region_figlio(albero->left, albero->point, albero->cut_dim, albero->H, k);
+            albero->left->H= H_figlio;
+            dealloc_matrix(H_figlio);
+        }
+        if(albero->right!=NULL){
+            float* H_figlio = alloc_matrix(2,k);
+            H_figlio=build_region_figlio(albero->right, albero->point, albero->cut_dim, albero->H, k);
+            albero->right->H=H_figlio;
+            dealloc_matrix(H_figlio);
+
+            for(int i=0; i<k; i++){
+            printf("%f\n", albero->right->H[i]);
+            }
+        }
+
+        assegnaRegioni(albero->left, k);
+        assegnaRegioni(albero->right, k);
+    }
+    return 1;    
 }
 
 float Distance (MATRIX H, float* Q, int k){ //prima c'era float* H al posto di MATRIX H
@@ -775,38 +800,22 @@ float Distance (MATRIX H, float* Q, int k){ //prima c'era float* H al posto di M
 * 	======================
 */
 struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
-    if(r<0) return NULL;
+    if(albero==NULL) return NULL;
+    //if(r<0) return NULL;
     struct list* Lista = (struct list*)malloc(sizeof(struct list));
-    printf("creazione della regione\n");
-    MATRIX H;
-    if(albero->cut_dim>0){ //check sulla dimensione di taglio per la costruzione della regione 
-        H=build_region_figlio(albero, albero->father, k);
-    }
-    else{
-        H=build_region_radice(albero, k);
-    }
-    printf("regione creata\n");
-    /*if((Distance(Q, albero->point, k))>0){
-        return 0;
-    }*/
-    if(Distance(H,Q,k)>=r){
+    
+    if(Distance(albero->H,Q,k)>=r){
         return 0; 
     }
     float* P = albero->point;
-    //float* P = (float*)malloc(k*sizeof(float));
-    //for(int i = 0; i < k; i++){
-      //  P[i] = albero->point[i];
-    //}
-    //P = albero->point;
+
     printf("p fatto\n");
     float ed = EuclideanDistance(P,Q,k);
-    printf("Distanza euclidea calcolata\n");
+    printf("Distanza euclidea calcolata: %f\n", ed);
     if(ed<=r){
         printf("Aggiunta del punto\n");
         Lista->point = P;
-        //for(int i = 0; i < k; i++){
-          //  Lista->point[i] = P[i];
-        //}
+        punti++;
         printf("aggiunto punto nella lista\n");
     }
     if(albero->left != NULL){
@@ -820,6 +829,31 @@ struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
     return Lista;
 }
 
+/*void stampaLista(struct list *lista){
+    printf("%p\n", lista->point);
+    stampaLista(lista->next);
+};
+
+void stampaAlbero(KDTREE albero){
+    printf("%p\n", albero->point);
+    stampaAlbero(albero->left);
+    stampaAlbero(albero->right);
+};*/
+
+void stampaAlbero(KDTREE albero, int k){
+    if(albero==NULL){
+        exit(-1);
+    }  
+    float punto[k];
+    for(int i=0; i<k; i++){
+       printf("%f\n", albero->point[i]);
+    }
+    
+    stampaAlbero(albero->left, k);
+    stampaAlbero(albero->right, k);
+}
+
+
 void range_query(params* input) {
     int dim = input->k;
     int pca = input->h;
@@ -831,17 +865,20 @@ void range_query(params* input) {
     KDTREE albero = input->kdtree;
     float* punto;
     struct list* List;
-    
-    for(int i=0; i<dimqs*dim; i+=dim){
-        float* punto;
-        //printf("si prende punto da qs\n");
-        float* puntoqs = alloc_matrix(1,dim);
-        for(int j=0; j<dim; j++){
-            puntoqs[j]=queryset[i*dim+j];
-        } 
 
-        if (pca>0){ //nel caso in cui fosse abilitata la pca
+    //stampaAlbero(albero, dim);
 
+    printf("CHECK\n");
+    if(pca>0){ //nel caso in cui fosse abilitata la pca
+        assegnaRegioni(albero, pca);
+        for(int i=0; i<dimqs*pca; i+=pca){
+            //printf("si prende punto da qs\n");
+            float* puntoqs = alloc_matrix(1,pca);
+            for(int j=0; j<pca; j++){
+                puntoqs[j]=queryset[i*pca+j];
+            } 
+
+       
         /* In particolare, il punto Q dovr`a essere centrato rispetto alla media del dataset 
         e trasformato moltiplicandolo per la matrice dei load V . Quindi, sia b Q il punto 
         Q centrato sulla media del dataset, la range query deve essere eﬀettuata sul punto 
@@ -851,14 +888,24 @@ void range_query(params* input) {
             //printf("ok\n");
             float* q1 = mul(qc,V, dim, pca); //va fatta la moltiplicazione vettore matrice
             //printf("mul fatta\n");
-            punto = q1;
+
+                        
+            List = ListaPunti(albero, puntoqs, raggio, pca);
         }
-        else{
-            //printf("NON si centra punto");
-            punto = puntoqs;
-        }
-        List = ListaPunti(albero, punto, raggio, dim);
     }
+    else{
+        for(int i=0; i<dimqs*dim; i+=dim){
+        //printf("si prende punto da qs\n");
+            float* puntoqs = alloc_matrix(1,dim);
+            for(int j=0; j<dim; j++){
+                puntoqs[j]=queryset[i*dim+j];
+            } 
+
+            List = ListaPunti(albero, puntoqs, raggio, dim);
+  
+        }
+    }
+    input->QA=&punti;
 }
 
 
@@ -1082,3 +1129,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
