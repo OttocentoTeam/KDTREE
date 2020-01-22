@@ -544,10 +544,10 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     }
     //free(node);
     
-    for(int i=0; i<col; i++){
+    /*for(int i=0; i<col; i++){
         printf("%f ,", node->point[i]);
     }
-    printf("\n");
+    printf("\n");*/
     return node;
 }//buildTree
 
@@ -745,9 +745,9 @@ int assegnaRegioni(KDTREE albero, int k){
             dealloc_matrix(H_figlio);
         }
         
-        for(int i=0; i<k; i++){
+        /*for(int i=0; i<k; i++){
             printf("%f\n", albero->right->H[i]);
-        }
+        }*/
 
         cont++;
         assegnaRegioni(albero->left, k);
@@ -766,9 +766,9 @@ int assegnaRegioni(KDTREE albero, int k){
             albero->right->H=H_figlio;
             dealloc_matrix(H_figlio);
 
-            for(int i=0; i<k; i++){
+            /*for(int i=0; i<k; i++){
             printf("%f\n", albero->right->H[i]);
-            }
+            }*/
         }
 
         assegnaRegioni(albero->left, k);
@@ -809,21 +809,21 @@ struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
     }
     float* P = albero->point;
 
-    printf("p fatto\n");
+    //printf("p fatto\n");
     float ed = EuclideanDistance(P,Q,k);
-    printf("Distanza euclidea calcolata: %f\n", ed);
+    //printf("Distanza euclidea calcolata: %f\n", ed);
     if(ed<=r){
-        printf("Aggiunta del punto\n");
+        //printf("Aggiunta del punto\n");
         Lista->point = P;
         punti++;
-        printf("aggiunto punto nella lista\n");
+        //printf("aggiunto punto nella lista\n");
     }
     if(albero->left != NULL){
-        printf("vado a sx\n");
+        //printf("vado a sx\n");
         Lista->next=ListaPunti(albero->left, Q, r, k);
     }
     if(albero->right != NULL){
-        printf("vado a dx\n");
+        //printf("vado a dx\n");
         Lista->next=ListaPunti(albero->right, Q, r, k);
     }
     return Lista;
@@ -868,7 +868,7 @@ void range_query(params* input) {
 
     //stampaAlbero(albero, dim);
 
-    printf("CHECK\n");
+    
     if(pca>0){ //nel caso in cui fosse abilitata la pca
         assegnaRegioni(albero, pca);
         for(int i=0; i<dimqs*pca; i+=pca){
@@ -894,6 +894,8 @@ void range_query(params* input) {
         }
     }
     else{
+        assegnaRegioni(albero, dim);
+        printf("CHECK\n");
         for(int i=0; i<dimqs*dim; i+=dim){
         //printf("si prende punto da qs\n");
             float* puntoqs = alloc_matrix(1,dim);
@@ -905,7 +907,8 @@ void range_query(params* input) {
   
         }
     }
-    input->QA=&punti;
+    input->nQA=punti;
+    
 }
 
 
@@ -928,7 +931,7 @@ int main(int argc, char** argv) {
     input->kdtree = NULL;
     input->r = -1;
     input->silent = 0;
-    input->display = 0;
+    input->display = 1;
     input->QA = NULL;
     input->nQA = 0;
     
@@ -1110,6 +1113,7 @@ int main(int argc, char** argv) {
     if(input->r >= 0){
         if(!input->silent && input->display) {
             //NB: il codice non assume che QA sia ordinata per query, in caso lo sia ottimizzare il codice
+            //printf("Trovati %d punti \n", punti);
             printf("\nQuery Answer:\n");
             for(i = 0; i < input->nq; i++){
                 printf("query %d: [ ", i);
