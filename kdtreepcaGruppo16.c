@@ -75,6 +75,10 @@ typedef struct {
     MATRIX V; //matrice V restituita dall'algoritmo PCA
     int cont = 0;
     int punti = 0;
+    int idQ = 0;
+    int idN = 0;
+    int indiceQA =0;
+    int* ris;
 /*
 * 
 *	Le funzioni sono state scritte assumento che le matrici siano memorizzate 
@@ -90,6 +94,7 @@ typedef struct {
 */
 
 struct tree{
+	int id;
     float* point;
     int cut_dim;
     float* H;
@@ -97,10 +102,7 @@ struct tree{
     struct tree *right;
 };//tree
 
-struct list{
-    float* point;
-    struct list *next;
-}; //LinkedList
+
 
 struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,int col);
 void ordinaDataset(MATRIX d,int inizio_matrice,int fine_matrice,int col,int c);
@@ -114,7 +116,7 @@ float Distance (MATRIX H, float* Q, int k);
 float minDim(KDTREE albero, int dim);
 float maxDim(KDTREE albero, int dim);
 float* build_region(struct tree *nodo, int h);
-struct list* ListaPunti(KDTREE albero, float* Q, float r, int h);
+void ListaPunti(KDTREE albero, float* Q, float r, int h, int i);
 
 void* get_block(int size, int elements) { 
     return _mm_malloc(elements*size,16); 
@@ -517,6 +519,8 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
         printf("padri vecchi\n");
     }*/
     node->cut_dim = c;
+    node->id=idN;
+    idN++;
     for(int x = inizio_matrice; x < index; x++){
         if(d[x*col+c]==d[index*col+c]){
             for(int y = 0; y < col; y++){
@@ -812,13 +816,12 @@ float Distance (MATRIX H, float* Q, int k){ //prima c'era float* H al posto di M
 *	Range Query Search
 * 	======================
 */
-struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
-    if(albero==NULL) return NULL;
+void ListaPunti(KDTREE albero, float* Q, float r, int k, int idQ){
+    if(albero==NULL) return;
     //if(r<0) return NULL;
-    struct list* Lista = (struct list*)malloc(sizeof(struct list));
     
     if(Distance(albero->H,Q,k)>=r){
-        return 0; 
+        return; 
     }
     float* P = albero->point;
 
@@ -826,20 +829,28 @@ struct list* ListaPunti(KDTREE albero, float* Q, float r, int k){
     float ed = EuclideanDistance(P,Q,k);
     //printf("Distanza euclidea calcolata: %f\n", ed);
     if(ed<=r){
-        //printf("Aggiunta del punto\n");
-        Lista->point = P;
+        if(indiceQA==0){
+            ris[indiceQA]=idQ;
+            ris[indiceQA+1]=albero->id;
+            indiceQA+=2;
+        }
+        else{
+            ris=realloc(ris, (indiceQA+2)*(sizeof(int)));
+            ris[indiceQA]=idQ;
+            ris[indiceQA+1]=albero->id;
+            indiceQA+=2;
+        }
         punti++;
         //printf("aggiunto punto nella lista\n");
     }
     if(albero->left != NULL){
         //printf("vado a sx\n");
-        Lista->next=ListaPunti(albero->left, Q, r, k);
+        ListaPunti(albero->left, Q, r, k, idQ);
     }
     if(albero->right != NULL){
         //printf("vado a dx\n");
-        Lista->next=ListaPunti(albero->right, Q, r, k);
+        ListaPunti(albero->right, Q, r, k, idQ);
     }
-    return Lista;
 }
 
 /*void stampaLista(struct list *lista){
@@ -876,8 +887,9 @@ void range_query(params* input) {
     MATRIX queryset = input->qs;
     float raggio = input->r;
     KDTREE albero = input->kdtree;
-    float* punto;
-    struct list* List;
+    float* punto; 
+    ris=(int*)malloc(2*sizeof(int));   
+    
 
     //stampaAlbero(albero, dim);
 
@@ -886,13 +898,13 @@ void range_query(params* input) {
         assegnaRegioni(albero, pca);
         //printf("TEST\n");
         for(int i=0; i<dimqs*pca; i+=pca){
+            //struct list* List;
             //printf("si prende punto da qs\n");
             float* puntoqs = alloc_matrix(1,pca);
             for(int j=0; j<pca; j++){
                 puntoqs[j]=queryset[i*pca+j];
             } 
 
-       
         /* In particolare, il punto Q dovr`a essere centrato rispetto alla media del dataset 
         e trasformato moltiplicandolo per la matrice dei load V . Quindi, sia b Q il punto 
         Q centrato sulla media del dataset, la range query deve essere eﬀettuata sul punto 
@@ -903,24 +915,29 @@ void range_query(params* input) {
             float* q1 = mul(qc,V, pca, dim); //va fatta la moltiplicazione vettore matrice
             //printf("mul fatta\n");
           
-            List = ListaPunti(albero, q1, raggio, pca);
+            ListaPunti(albero, q1, raggio, pca, i);
             dealloc_matrix(puntoqs);
+            
         }
+
     }
     else{
         assegnaRegioni(albero, dim);
         printf("CHECK\n");
         for(int i=0; i<dimqs*dim; i+=dim){
+            
         //printf("si prende punto da qs\n");
             float* puntoqs = alloc_matrix(1,dim);
             for(int j=0; j<dim; j++){
                 puntoqs[j]=queryset[i*dim+j];
             } 
+	
+            ListaPunti(albero, puntoqs, raggio, dim, i);
 
-            List = ListaPunti(albero, puntoqs, raggio, dim);
   			dealloc_matrix(puntoqs);
         }
     }
+    input->QA=ris;
     input->nQA=punti;
     
 }
@@ -1127,7 +1144,7 @@ int main(int argc, char** argv) {
     if(input->r >= 0){
         if(!input->silent && input->display) {
             //NB: il codice non assume che QA sia ordinata per query, in caso lo sia ottimizzare il codice
-            //printf("Trovati %d punti \n", punti);
+            printf("Trovati %d punti \n", punti);
             printf("\nQuery Answer:\n");
             for(i = 0; i < input->nq; i++){
                 printf("query %d: [ ", i);
@@ -1147,4 +1164,3 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
