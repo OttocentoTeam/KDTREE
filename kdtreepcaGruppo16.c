@@ -481,7 +481,7 @@ void kdtree(params* input) {
     int l = 0;
     int pca = input->h;
     if(pca>0){
-        root = buildTree(U,l,inizio_matrice,input->h-1,pca);
+        root = buildTree(U,l,inizio_matrice,fine_matrice,pca);
     }
     else {
         root = buildTree(d,l,inizio_matrice,fine_matrice,col);
@@ -884,13 +884,14 @@ void range_query(params* input) {
         Q centrato sulla media del dataset, la range query deve essere eﬀettuata sul punto 
         ................................Q′ = Qcentrato*V........................ */
             //printf("si centra il punto\n");
-            float* qc = centraPunto (num, dim, d, puntoqs);
+            float* qc = centraPunto (num, pca, U, puntoqs);
             //printf("ok\n");
             float* q1 = mul(qc,V, dim, pca); //va fatta la moltiplicazione vettore matrice
             //printf("mul fatta\n");
-
+            puntoqs=q1;
                         
             List = ListaPunti(albero, puntoqs, raggio, pca);
+            dealloc_matrix(puntoqs);
         }
     }
     else{
@@ -1085,9 +1086,9 @@ int main(int argc, char** argv) {
     }else
         time = -1;
     if (!input->silent)
-        printf("\nIndexing time = %.3f secs\n", time);
+        printf("\nIndexing time = %.6f secs\n", time);
     else
-        printf("%.3f\n", time);
+        printf("%.6f\n", time);
 
     //
     // Range query search
