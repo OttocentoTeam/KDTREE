@@ -542,6 +542,11 @@ struct tree* buildTree(MATRIX d,int livello,int inizio_matrice,int fine_matrice,
     else if((fine_matrice-inizio_matrice)==1){
         node->right = buildTree(d,livello++,startDX,fine_matrice,col);
     }
+    else if((fine_matrice-inizio_matrice)==0){
+        node->left = NULL;
+        node->right = NULL;
+        return node;
+    }
     //free(node);
     
     /*for(int i=0; i<col; i++){
